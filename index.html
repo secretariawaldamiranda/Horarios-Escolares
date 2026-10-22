@@ -1,0 +1,1647 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Horário Escolar 2026</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #ffffff; --bg2: #f5f5f5; --bg3: #ebebeb;
+    --text: #1a1a1a; --text2: #666; --text3: #999;
+    --border: #e0e0e0; --row-active: #fffbe6; --row-active-text: #854F0B;
+    --badge-now-bg: #FAC775; --badge-now-text: #633806;
+    --tab-active-bg: #e6f1fb; --tab-active-text: #0c447c;
+  }
+  .dark {
+    --bg: #1a1a1a; --bg2: #252525; --bg3: #303030;
+    --text: #f0f0f0; --text2: #aaa; --text3: #777;
+    --border: #3a3a3a; --row-active: #332d00; --row-active-text: #FAC775;
+    --badge-now-bg: #633806; --badge-now-text: #FAC775;
+    --tab-active-bg: #0c447c; --tab-active-text: #e6f1fb;
+  }
+  body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 1.5rem; transition: background 0.3s, color 0.3s; }
+  .container { width: 100%; max-width: 700px; margin: 0 auto; }
+  h1 { font-size: 18px; font-weight: 500; margin-bottom: 1.5rem; color: var(--text); }
+  .top-bar { display: flex; flex-wrap: nowrap; gap: 12px; width: calc(100vw - 3rem); max-width: 1100px; position: relative; left: 50%; transform: translateX(-50%); margin-bottom: 1.5rem; align-items: center; justify-content: center; }
+  .top-bar > * { flex-shrink: 0; }
+  .top-bar .label { white-space: nowrap; }
+  .label { font-size: 13px; color: var(--text2); }
+  select { min-width: 130px; padding: 6px 10px; font-size: 13px; border: 0.5px solid var(--border); border-radius: 8px; background: var(--bg2); color: var(--text); cursor: pointer; }
+  .day-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1rem; }
+  .tab { padding: 5px 14px; font-size: 13px; border-radius: 8px; border: 0.5px solid var(--border); cursor: pointer; background: transparent; color: var(--text2); transition: background 0.15s; }
+  .tab.active { background: var(--tab-active-bg); color: var(--tab-active-text); border-color: transparent; font-weight: 500; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: var(--bg2); color: var(--text2); font-weight: 500; padding: 8px 10px; text-align: left; border-bottom: 0.5px solid var(--border); }
+  td { padding: 9px 10px; border-bottom: 0.5px solid var(--border); vertical-align: middle; transition: background 0.3s; }
+  tr.active-row td { background: var(--row-active); }
+  tr.active-row td.aula-num,
+  tr.active-row td.time-col { color: var(--row-active-text); font-weight: 700; }
+  .aula-num { font-weight: 500; color: var(--text3); font-size: 12px; }
+  .time-col { font-size: 12px; color: var(--text3); min-width: 70px; }
+  .subject-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+  .now-badge { display: inline-block; margin-left: 8px; padding: 1px 7px; border-radius: 20px; font-size: 11px; font-weight: 500; background: var(--badge-now-bg); color: var(--badge-now-text); vertical-align: middle; }
+  .mode-toggle { display: flex; gap: 6px; flex-wrap: nowrap; }
+  .mode-toggle > * { flex-shrink: 0; white-space: nowrap; }
+  .mode-theme-pair { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .mode-btn { padding: 5px 14px; font-size: 13px; border-radius: 8px; border: 0.5px solid var(--border); cursor: pointer; background: transparent; color: var(--text2); }
+  .mode-btn.active { background: var(--bg3); color: var(--text); font-weight: 500; }
+  .clock { font-size: 13px; color: var(--text2); margin-left: auto; font-variant-numeric: tabular-nums; }
+  .dark-toggle { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 104px; width: 104px; min-height: 32px; white-space: nowrap; padding: 5px 12px; font-size: 13px; border-radius: 8px; border: 0.5px solid var(--border); cursor: pointer; background: transparent; color: var(--text2); }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1rem; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text2); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  button, input, select { font: inherit; }
+  button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #287ac4; outline-offset: 3px; }
+  .admin-bar { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 16px; }
+  .admin-bar button, .dialog-actions button { border:1px solid var(--border); background:var(--bg2); color:var(--text); padding:9px 12px; border-radius:8px; cursor:pointer; font-size:13px; }
+  .admin-bar .primary, .dialog-actions .primary { background:#0c447c; color:white; border-color:#0c447c; }
+  .help { color:var(--text2); font-size:12px; line-height:1.6; margin:8px 0 16px; }
+  #notice { font-size:13px; line-height:1.5; margin-bottom:12px; color:var(--text); }
+  dialog { margin:auto; padding:24px; width:min(580px,calc(100% - 24px)); max-height:90vh; overflow:auto; border:1px solid var(--border); border-radius:14px; background:var(--bg); color:var(--text); }
+  dialog::backdrop { background:rgba(0,0,0,.5); }
+  dialog h2 { font-size:20px; margin-bottom:8px; }
+  dialog label { display:block; font-size:13px; font-weight:600; margin:15px 0 6px; }
+  dialog input:not([type=color]):not([type=checkbox]), dialog select { width:100%; border:1px solid var(--border); border-radius:8px; background:var(--bg2); color:var(--text); padding:10px; font-size:14px; }
+  dialog input[type=color] { width:64px; height:40px; padding:3px; border:1px solid var(--border); border-radius:6px; background:var(--bg2); cursor:pointer; }
+  .color-line { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+  .dialog-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:22px; }
+  #editor-error { color:#c03628; font-size:13px; margin-top:12px; }
+  #subjects { border-top:1px solid var(--border); margin-top:18px; padding-top:3px; }
+  .teacher-link { cursor:pointer; border:0; text-align:left; }
+  .teacher-link:hover { text-decoration:underline; }
+  button.legend-item { background:transparent; padding:4px 2px; }
+  button.subject-badge { font-size:12px; font-weight:500; line-height:1.5; }
+  .subject-choice { padding:10px 0; border-bottom:1px solid var(--border); }
+  .subject-choice label { display:flex; align-items:center; gap:8px; margin:0 0 7px; }
+  .subject-choice input[type=checkbox] { width:18px; height:18px; accent-color:#0c447c; flex-shrink:0; }
+  .subject-choice input:disabled { opacity:.55; }
+  #history-dialog { width:min(700px,calc(100% - 24px)); }
+  .history-entry { border:1px solid var(--border); border-radius:10px; padding:14px; margin:14px 0; }
+  .history-entry h3 { font-size:14px; margin-bottom:6px; }
+  .history-change { border-top:1px solid var(--border); padding-top:12px; margin-top:12px; }
+  .history-change p { font-size:13px; line-height:1.6; overflow-wrap:anywhere; }
+  .history-values { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px; }
+  .history-value { padding:10px; background:var(--bg2); border-radius:7px; }
+  .history-value strong { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; }
+  .history-swatch { display:inline-block; width:12px; height:12px; border-radius:50%; border:1px solid var(--text3); vertical-align:middle; margin-right:5px; }
+  @media(max-width:420px) { .history-values { grid-template-columns:1fr; } }
+  #table-container { overflow-x:auto; }
+  .subject-badge { white-space:normal; overflow-wrap:anywhere; }
+  @media(max-width:480px) { body { padding:16px 10px; } td,th { padding:9px 6px; } .clock { margin-left:0; } dialog { padding:18px; } }
+
+  #year-title { background:transparent; color:var(--text); border:0; font-size:inherit; font-weight:600; cursor:pointer; padding:5px 0; text-align:left; }
+  #year-title:hover { text-decoration:underline; }
+  .year-list { display:grid; gap:8px; margin:16px 0; }
+  .year-list button, .small-button { background:var(--bg2); color:var(--text); border:1px solid var(--border); padding:10px 12px; border-radius:8px; cursor:pointer; text-align:left; }
+  .year-list button[aria-current=true] { border-color:#287ac4; background:var(--tab-active-bg); color:var(--tab-active-text); }
+  dialog textarea { width:100%; padding:10px; min-height:90px; border:1px solid var(--border); border-radius:8px; background:var(--bg2); color:var(--text); font:inherit; font-size:14px; resize:vertical; }
+  .new-teacher-row { border:1px solid var(--border); border-radius:10px; padding:12px; margin:12px 0; }
+  .teacher-row-head { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .teacher-row-head h3 { font-size:14px; }
+  .small-button { font-size:12px; padding:6px 9px; }
+  .form-error { color:#c03628; font-size:13px; margin-top:12px; }
+  #new-year-dialog { width:min(650px,calc(100% - 24px)); }
+  #year-manager .dialog-actions { flex-wrap:wrap; }
+  .schedule-row { border-bottom:1px solid var(--border); padding-bottom:12px; }
+  .grade-choice { border:1px solid var(--border); border-radius:9px; padding:10px 12px; margin:10px 0; }
+  dialog .grade-check { display:flex; align-items:center; gap:9px; margin:0; }
+  .grade-check input[type=checkbox] { width:18px; height:18px; accent-color:#0c447c; flex-shrink:0; }
+  [hidden] { display:none !important; }
+  .catalog-teacher { border-bottom:1px solid var(--border); padding:14px 0; display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px; }
+  .catalog-teacher b { overflow-wrap:anywhere; font-size:14px; }
+  .catalog-teacher .help { margin:5px 0 0; }
+  .catalog-actions { display:flex; flex-wrap:wrap; gap:6px; }
+  #year-settings { width:min(650px,calc(100% - 24px)); }
+  #settings-notice { font-size:13px; line-height:1.6; margin:10px 0; }
+  .settings-section { border-bottom:1px solid var(--border); padding:14px 0 20px; margin-bottom:18px; }
+  .settings-section h3 { font-size:16px; margin-bottom:8px; }
+  .import-teacher-choice { display:flex; gap:10px; align-items:flex-start; padding:12px 0; border-bottom:1px solid var(--border); cursor:pointer; }
+  .import-teacher-choice input[type=checkbox] { width:18px; height:18px; flex-shrink:0; accent-color:#0c447c; margin-top:2px; }
+  .import-subjects { display:block; font-weight:400; margin:5px 0 0; }
+  .import-teacher-choice b { overflow-wrap:anywhere; font-size:14px; }
+  button:disabled { cursor:default; opacity:.5; }
+  .catalog-name { display:flex; gap:8px; align-items:center; }
+  .trash-button { display:inline-flex; align-items:center; justify-content:center; border:1px solid var(--border); background:transparent; color:var(--text); border-radius:7px; width:34px; height:34px; cursor:pointer; flex-shrink:0; }
+  .trash-button:hover { background:var(--bg3); }
+  .dialog-actions .danger { background:#ad2929; border-color:#ad2929; color:white; }
+  body { padding-top:112px; }
+  #open-history { padding:9px 12px; border:1px solid var(--border); border-radius:8px; background:var(--bg2); color:var(--text); cursor:pointer; font-size:13px; line-height:1.4; }
+  #open-history:hover { background:var(--bg3); }
+  @media(max-width:480px) { .page-actions { top:12px; right:10px; } .top-bar { width: calc(100vw - 20px); } }
+  .page-actions { position:absolute; top:16px; right:16px; display:flex; flex-direction:column; align-items:flex-end; gap:8px; }
+  #edit-lock { display:inline-flex; align-items:center; gap:7px; border:1px solid var(--border); border-radius:8px; background:var(--bg2); color:var(--text2); padding:7px 10px; font-size:12px; cursor:pointer; }
+  #edit-lock[aria-pressed=true] { color:var(--tab-active-text); background:var(--tab-active-bg); }
+  .lock-icon { display:inline-block; font-size:18px; line-height:1.2; transform-origin:50% 20%; }
+  #edit-lock.lock-shake .lock-icon { animation:lock-shake .6s ease-in-out; }
+  #edit-lock.lock-shake { animation:lock-flash .6s ease-in-out; }
+  @keyframes lock-shake { 0%,100% { transform:rotate(0); } 15%,45%,75% { transform:rotate(-18deg); } 30%,60%,90% { transform:rotate(18deg); } }
+  @keyframes lock-flash { 30%,70% { border-color:#b35c13; background:var(--row-active); } }
+  .visually-hidden { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; border:0; }
+  @media(prefers-reduced-motion:reduce) { #edit-lock.lock-shake .lock-icon { animation:none; } }
+  @media(max-width:480px) { .page-actions { top:12px; right:10px; } }
+  .container.week-view { max-width:1100px; }
+  .weekly-table { table-layout:fixed; min-width:760px; }
+  .weekly-table caption { text-align:left; font-size:14px; font-weight:600; margin-bottom:12px; color:var(--text); }
+  .weekly-table th:first-child { width:110px; }
+  .weekly-table td { vertical-align:top; }
+  .weekly-table .subject-badge { text-align:left; }
+  .weekly-time { display:block; font-size:11px; color:var(--text3); white-space:nowrap; margin-top:6px; }
+  .weekly-active { background:var(--row-active); }
+  .weekly-empty { background:transparent; color:var(--text3); font-size:12px; padding:4px 0; }
+  .restore-before { border:1px solid var(--border); color:var(--text); text-align:left; cursor:pointer; width:100%; }
+  .restore-before:hover { border-color:#287ac4; background:var(--tab-active-bg); }
+  .value-line { display:block; font-size:13px; line-height:1.6; overflow-wrap:anywhere; }
+  .restore-hint { display:block; color:var(--tab-active-text); font-size:11px; margin-top:7px; }
+  .history-state-active { border-color:#287ac4; background:var(--tab-active-bg); }
+</style>
+</head>
+<body>
+<div class="page-actions">
+  <button type="button" id="open-history" aria-haspopup="dialog">Histórico de alterações</button>
+  <button type="button" id="edit-lock" aria-pressed="false" aria-label="Desbloquear edições" title="Clique para desbloquear as edições"><span class="lock-icon" id="lock-icon" aria-hidden="true">🔒</span><span id="lock-label">Edições bloqueadas</span></button>
+</div>
+<span id="lock-status" class="visually-hidden" role="status" aria-live="polite"></span>
+<div class="container" id="schedule-container">
+  <h1><button type="button" id="year-title" aria-haspopup="dialog" title="Selecionar ou registrar um ano">Horário escolar 2026 ▾</button></h1>
+  <div class="top-bar">
+    <label class="label" for="turma-sel">Turma:</label>
+    <select id="turma-sel">
+      <option value="6A">6º Ano A</option>
+      <option value="6B">6º Ano B</option>
+      <option value="7A">7º Ano A</option>
+      <option value="7B">7º Ano B</option>
+      <option value="8A">8º Ano A</option>
+      <option value="8B">8º Ano B</option>
+      <option value="9A">9º Ano A</option>
+      <option value="9B">9º Ano B</option>
+    </select>
+    <span class="label">Horário:</span>
+    <div class="mode-toggle">
+      <button class="mode-btn active" onclick="setMode('normal',this)">Normal (48 min)</button>
+      <button class="mode-btn" onclick="setMode('reduzido',this)">Reduzido (36 min)</button>
+      <div class="mode-theme-pair">
+        <button class="mode-btn" onclick="setMode('930',this)">Até 09:30</button>
+        <button class="dark-toggle" id="dark-btn" onclick="toggleDark()">🌙 Escuro</button>
+      </div>
+    </div>
+    <span class="clock" id="clock" hidden aria-hidden="true">--:--:--</span>
+  </div>
+
+  <p class="help">Clique no título para trocar ou registrar um ano. No menu do título, acesse as turmas, os professores e a montagem dos horários. Clique no nome de um professor para editar. Marque as matérias que deseja alterar, mantendo os horários. As alterações ficam salvas neste navegador. Consulte o histórico para ver as mudanças realizadas.</p>
+  <p id="notice" role="status" aria-live="polite"></p>
+  <div class="day-tabs" id="day-tabs"></div>
+  <div class="legend" id="legend"></div>
+  <div id="table-container"></div>
+</div>
+
+<dialog id="editor" aria-labelledby="editor-title">
+  <form id="editor-form">
+    <h2 id="editor-title">Editar professor(a)</h2>
+    <p class="help">Marque as matérias que deseja alterar. O nome e a cor serão aplicados somente às matérias marcadas, nos mesmos dias e horários. As demais ficam como estão.</p>
+    <label for="edit-scope">Onde aplicar</label>
+    <select id="edit-scope"><option value="all">Todas as turmas</option><option value="class">Somente a turma selecionada</option></select>
+    <p class="help" id="scope-help"></p>
+    <label for="edit-teacher">Professor(a) atual</label>
+    <select id="edit-teacher"></select>
+    <label for="edit-name">Nome do professor(a) substituto ou atual</label>
+    <input id="edit-name" required maxlength="80" autocomplete="off" />
+    <label for="edit-color">Cor nos horários</label>
+    <div class="color-line"><input type="color" id="edit-color" /><span id="color-preview" class="subject-badge">Prévia</span></div>
+    <div id="subjects"></div>
+    <p class="help" id="impact"></p>
+    <p id="editor-error" role="alert"></p>
+    <div class="dialog-actions"><button type="button" id="cancel-editor">Cancelar</button><button type="submit" class="primary">Salvar alterações</button></div>
+  </form>
+</dialog>
+<dialog id="history-dialog" aria-labelledby="history-title">
+  <h2 id="history-title">Histórico de alterações</h2>
+  <p class="help">Da mais recente para a mais antiga. Clique em “Antes” ou “Depois” para alternar os valores daquela mudança, sem criar registros novos. Abra o cadeado para editar. O histórico fica salvo neste navegador.</p>
+  <div class="admin-bar"><button type="button" id="undo-last">↶ Desfazer última alteração</button></div>
+  <p class="help" id="undo-info"></p>
+  <p class="form-error" id="undo-error" role="alert"></p>
+  <div id="history-list"></div>
+  <div class="dialog-actions"><button type="button" id="close-history">Fechar</button></div>
+</dialog>
+<dialog id="year-manager" aria-labelledby="year-manager-title">
+  <h2 id="year-manager-title">Anos escolares</h2>
+  <p class="help">Cada ano tem suas próprias turmas, professores, grade e histórico. Tudo fica salvo neste navegador.</p>
+  <div id="year-list" class="year-list"></div>
+  <p class="help">Opções do ano selecionado</p>
+  <div class="admin-bar">
+    <button type="button" id="open-year-settings">Turmas e professores</button>
+    <button type="button" id="open-schedule">Montar horários</button>
+  </div>
+  <p id="year-manager-error" class="form-error" role="alert"></p>
+  <div class="dialog-actions"><button type="button" id="close-years">Fechar</button><button type="button" class="primary" id="register-year">Registrar novo ano</button></div>
+</dialog>
+<dialog id="new-year-dialog" aria-labelledby="new-year-title">
+  <form id="new-year-form">
+    <h2 id="new-year-title">Registrar novo ano</h2>
+    <p class="help">Selecione os anos escolares e cadastre os professores. A grade começa em branco e pode ser preenchida em “Montar horários”. Os anos anteriores serão mantidos.</p>
+    <label for="new-year-number">Ano letivo</label>
+    <input type="number" id="new-year-number" min="2000" max="2199" step="1" required />
+    <h3 style="font-size:16px;margin-top:18px">Selecione os anos escolares</h3>
+    <p class="help">Fundamental II: do 6º ao 9º ano. Para cada ano selecionado, escolha a última turma. Todas começam pela A.</p>
+    <div id="new-year-grades"></div>
+    <h3 style="font-size:16px;margin-top:18px">Professores</h3>
+    <button type="button" class="small-button" id="import-draft-teachers">Importar professores do ano anterior</button>
+    <p id="draft-import-notice" class="help" role="status" aria-live="polite"></p>
+    <div id="new-teachers"></div>
+    <button type="button" class="small-button" id="add-new-teacher">+ Adicionar professor(a)</button>
+    <p id="new-year-error" class="form-error" role="alert"></p>
+    <div class="dialog-actions"><button type="button" id="cancel-new-year">Cancelar</button><button type="submit" class="primary">Registrar ano</button></div>
+  </form>
+</dialog>
+<dialog id="schedule-dialog" aria-labelledby="schedule-title">
+  <form id="schedule-form">
+    <h2 id="schedule-title">Montar horários</h2>
+    <p class="help" id="schedule-context"></p>
+    <p class="help">Escolha o professor e a matéria para cada aula. A grade usa os mesmos lugares nos modos normal e reduzido; o modo até 09:30 exibe as três primeiras aulas.</p>
+    <div id="schedule-fields"></div>
+    <p id="schedule-error" class="form-error" role="alert"></p>
+    <div class="dialog-actions"><button type="button" id="cancel-schedule">Cancelar</button><button type="submit" class="primary">Salvar horários</button></div>
+  </form>
+</dialog>
+<dialog id="year-settings" aria-labelledby="settings-title">
+  <h2 id="settings-title">Turmas e professores</h2>
+  <p class="help">Você pode voltar aqui a qualquer momento para acrescentar turmas, professores e matérias neste ano.</p>
+  <form id="class-settings-form" class="settings-section">
+    <h3>Turmas do Fundamental II</h3>
+    <p class="help">Selecione do 6º ao 9º ano e escolha até qual turma: de A a F. Todas começam pela A.</p>
+    <div id="manage-grades"></div>
+    <p class="help">Ao diminuir as turmas, as que saírem da lista ficarão guardadas com seus horários. Se você selecionar essas turmas novamente, seus dados serão recuperados.</p>
+    <div class="dialog-actions"><button type="submit" class="primary">Salvar turmas</button></div>
+  </form>
+  <section class="settings-section">
+    <h3>Professores e matérias</h3>
+    <div class="catalog-actions"><button type="button" class="small-button" id="add-catalog-teacher">+ Adicionar professor(a)</button><button type="button" class="small-button" id="import-existing-teachers">Importar professores do ano anterior</button></div>
+    <div id="teacher-catalog"></div>
+  </section>
+  <p id="settings-notice" role="status" aria-live="polite"></p>
+  <p id="settings-error" class="form-error" role="alert"></p>
+  <div class="dialog-actions"><button type="button" id="close-settings">Fechar</button></div>
+</dialog>
+<dialog id="catalog-teacher-dialog" aria-labelledby="catalog-teacher-title">
+  <form id="catalog-teacher-form">
+    <h2 id="catalog-teacher-title">Adicionar professor(a)</h2>
+    <p class="help" id="catalog-teacher-help"></p>
+    <label for="catalog-teacher-name">Nome</label>
+    <input id="catalog-teacher-name" required maxlength="80" autocomplete="off" />
+    <label for="catalog-teacher-subjects">Matérias (separadas por vírgulas)</label>
+    <input id="catalog-teacher-subjects" required placeholder="Matemática, Ciências" />
+    <label for="catalog-teacher-color">Cor</label>
+    <input type="color" id="catalog-teacher-color" value="#EEEDFE" />
+    <p id="catalog-teacher-error" class="form-error" role="alert"></p>
+    <div class="dialog-actions"><button type="button" id="cancel-catalog-teacher">Cancelar</button><button type="submit" class="primary">Salvar</button></div>
+  </form>
+</dialog>
+<dialog id="import-teachers-dialog" aria-labelledby="import-teachers-title">
+  <form id="import-teachers-form">
+    <h2 id="import-teachers-title">Importar professores do ano anterior</h2>
+    <p class="help" id="import-teachers-context"></p>
+    <label for="import-source-year">Importar de qual ano?</label>
+    <select id="import-source-year"></select>
+    <p class="help">Os nomes, matérias e cores são copiados. Professores já cadastrados serão mantidos; somente matérias novas serão acrescentadas. O ano de origem permanece intacto.</p>
+    <div class="catalog-actions"><button type="button" class="small-button" id="select-import-all">Marcar todos</button><button type="button" class="small-button" id="select-import-none">Desmarcar todos</button></div>
+    <p class="help" id="import-teachers-count" role="status" aria-live="polite"></p>
+    <div id="import-teachers-list"></div>
+    <p class="form-error" id="import-teachers-error" role="alert"></p>
+    <div class="dialog-actions"><button type="button" id="cancel-teacher-import">Cancelar</button><button type="submit" class="primary" id="confirm-teacher-import">Importar selecionados</button></div>
+  </form>
+</dialog>
+<dialog id="delete-teacher-dialog" aria-labelledby="delete-teacher-title">
+  <h2 id="delete-teacher-title">Excluir professor(a)?</h2>
+  <p class="help" id="delete-teacher-summary"></p>
+  <p class="help">As aulas desse cadastro ficarão sem professor. Você poderá preenchê-las em “Montar horários”. A exclusão vale somente para o ano selecionado e ficará registrada no histórico.</p>
+  <p class="form-error" id="delete-teacher-error" role="alert"></p>
+  <div class="dialog-actions"><button type="button" id="cancel-delete-teacher" autofocus>Cancelar</button><button type="button" class="danger" id="confirm-delete-teacher">Excluir professor(a)</button></div>
+</dialog>
+<script>
+const DIAS = ["2ª Feira","3ª Feira","4ª Feira","5ª Feira","6ª Feira"];
+
+const HORARIOS = {
+  normal:   ["07:30","08:18","09:06","09:54","10:42","11:30"],
+  reduzido: ["07:30","08:06","08:42","09:18","09:54","10:30"],
+  "930":    ["07:30","08:10","08:50","09:30","—","—"]
+};
+
+let PROF_COLORS = {
+  "Nilmar":   { l:"#EEEDFE", d:"#2a2060", tl:"#3C3489", td:"#c8c3f8" },
+  "Islara":   { l:"#E6F1FB", d:"#0a2d50", tl:"#0C447C", td:"#90c4f0" },
+  "Alex":     { l:"#E1F5EE", d:"#04342C", tl:"#085041", td:"#6fd4b0" },
+  "Ismênia":    { l:"#FAEEDA", d:"#412402", tl:"#633806", td:"#f5c97a" },
+  "Ludmilla": { l:"#EAF3DE", d:"#173404", tl:"#27500A", td:"#a8d96a" },
+  "Delzeni":  { l:"#FCEBEB", d:"#500d0d", tl:"#791F1F", td:"#f5a0a0" },
+  "Eldira":   { l:"#FFF0E6", d:"#3d1800", tl:"#993300", td:"#ffb07a" },
+  "Thalita":  { l:"#FBEAF0", d:"#4b1528", tl:"#72243E", td:"#f0a0c0" },
+  "Eder":     { l:"#E8F4F8", d:"#0a2535", tl:"#1a5276", td:"#7ec8e3" },
+  "default":  { l:"#F1EFE8", d:"#2a2a2a", tl:"#444441", td:"#aaa" }
+};
+
+function getProfName(subj) {
+  const first = subj.split(" ")[0];
+  return PROF_COLORS[first] ? first : "default";
+}
+
+function getBadgeColors(subj) {
+  const turma = document.getElementById('turma-sel').value;
+  const key = getProfName(subj);
+  const profile = lessonProfile(key, turma, subj.slice(key.length).trim());
+  return { bg: profile.color, color: contrastColor(profile.color) };
+}
+
+let RAW = {
+  "2ª Feira": {
+    "6A":  ["Nilmar hist.","Islara Arte","Alex Geog.","Islara Port.","Ludmilla Ciências"],
+    "6B":  ["Ismênia Ed. Fís.","Thalita Mat.","Islara Port.","Ludmilla Ciências","Nilmar hist."],
+    "7A":  ["Ludmilla Ciências","Ismênia Ed. Fís.","Thalita Mat.","Nilmar hist.","Islara Port."],
+    "7B":  ["Islara Arte","Ludmilla Ciências","Ismênia Ed. Fís.","Eldira Port.","Delzeni mat."],
+    "8A":  ["Thalita Religião","Nilmar hist.","Ludmilla Ciências","Delzeni mat.","Eldira Port."],
+    "8B":  ["Delzeni mat.","Alex Geog.","Eldira Port.","Ismênia Ed. Fís.","Eder Inglês"],
+    "9A":  ["Eldira Port.","Delzeni mat.","Nilmar hist.","Alex Geog.","Ismênia Ed. Fís."],
+    "9B":  ["Alex Geog.","Eldira Port.","Delzeni mat.","Eder Inglês","Thalita Religião"]
+  },
+  "3ª Feira": {
+    "6A":  ["Alex Geog.","Thalita Mat.","Ismênia Inglês","Thalita Mat.","Islara Port."],
+    "6B":  ["Thalita Mat.","Alex Geog.","Islara Arte","Ismênia Inglês","Thalita Mat."],
+    "7A":  ["Islara Arte","Ludmilla Ciências","Nilmar hist.","Alex Geog.","Ismênia Inglês"],
+    "7B":  ["Delzeni mat.","Nilmar hist.","Alex Geog.","Ludmilla Ciências","Eldira Port."],
+    "8A":  ["Ismênia Ed. Fís.","Islara Arte","Delzeni mat.","Eldira Port.","Alex Geog."],
+    "8B":  ["Nilmar hist.","Delzeni mat.","Eldira Port.","Islara Arte","Ludmilla Ciências"],
+    "9A":  ["Ludmilla Ciências","Eldira Port.","Thalita Religião","Delzeni mat.","Nilmar hist."],
+    "9B":  ["Eldira Port.","Ismênia Ed. Fís.","Ludmilla Ciências","Nilmar hist.","Delzeni mat."]
+  },
+  "4ª Feira": {
+    "6A":  ["Ludmilla Ciências","Nilmar hist.","Alex Geog.","Thalita Mat.","Islara Port."],
+    "6B":  ["Alex Geog.","Ismênia Inglês","Nilmar hist.","Islara Port.","Thalita Religião"],
+    "7A":  ["Ismênia Ed. Fís.","Thalita Mat.","Thalita Mat.","Nilmar hist.","Ludmilla Ciências"],
+    "7B":  ["Thalita Religião","Delzeni mat.","Ismênia Ed. Fís.","Alex Geog.","Eldira Port."],
+    "8A":  ["Eldira Port.","Alex Geog.","Delzeni mat.","Ludmilla Ciências","Ismênia Inglês"],
+    "8B":  ["Nilmar hist.","Ludmilla Ciências","Eldira Port.","Delzeni mat.","Eder Inglês"],
+    "9A":  ["Islara Arte","Eldira Port.","Eder Inglês","Ismênia Ed. Fís.","Delzeni mat."],
+    "9B":  ["Delzeni mat.","Islara Arte","Ludmilla Ciências","Eldira Port.","Alex Geog."]
+  },
+  "5ª Feira": {
+    "6A":  ["Nilmar hist.","Islara Port.","Ludmilla Ciências","Thalita Mat.","Thalita Ed. Fis."],
+    "6B":  ["Thalita Mat.","Ludmilla Ciências","Islara Port.","Nilmar hist.","Islara Port."],
+    "7A":  ["Islara Port.","Thalita Mat.","Thalita Religião","Islara Port.","Alex Geog."],
+    "7B":  ["Delzeni mat.","Ismênia Inglês","Nilmar hist.","Alex Geog.","Eldira Port."],
+    "8A":  ["Alex Geog.","Delzeni mat.","Ismênia Ed. Fís.","Eldira Port.","Nilmar hist."],
+    "8B":  ["Eldira Port.","Alex Geog.","Delzeni mat.","Ludmilla Ciências","Ismênia Ed. Fís."],
+    "9A":  ["Ludmilla Ciências","Eldira Port.","Alex Geog.","Delzeni mat.","Eder Inglês"],
+    "9B":  ["Ismênia Ed. Fís.","Nilmar hist.","Eldira Port.","Eder Inglês","Delzeni mat."]
+  },
+  "6ª Feira": {
+    "6A":  ["Islara Religião","Ismênia Inglês","Thalita Mat.","Islara Port.","Thalita Ed. Fis."],
+    "6B":  ["Ismênia Ed. Fís.","Alex Geog.","Islara Port.","Thalita Mat.","Ludmilla Ciências"],
+    "7A":  ["Thalita Mat.","Islara Port.","Alex Geog.","Ismênia Inglês","Islara Port."],
+    "7B":  ["Ludmilla Ciências","Delzeni mat.","Eldira Port.","Nilmar hist.","Ismênia Inglês"],
+    "8A":  ["Delzeni mat.","Ludmilla Ciências","Ismênia Inglês","Eldira Port.","Nilmar hist."],
+    "8B":  ["Nilmar hist.","Thalita Religião","Delzeni mat.","Alex Geog.","Eldira Port."],
+    "9A":  ["Eldira Port.","Nilmar hist.","Ludmilla Ciências","Delzeni mat.","Alex Geog."],
+    "9B":  ["Alex Geog.","Eldira Port.","Nilmar hist.","Ludmilla Ciências","Delzeni mat."]
+  }
+};
+
+
+const STORAGE_KEY = 'horario-escolar-2026-professores-v1';
+let TURMAS = Object.keys(RAW[DIAS[0]]);
+let TEACHERS = Object.keys(PROF_COLORS).filter(k => k !== 'default');
+let SUBJECTS = Object.fromEntries(TEACHERS.map(key => [key, [...new Set(DIAS.flatMap(day => TURMAS.flatMap(turma => RAW[day][turma])).filter(s => getProfName(s) === key).map(s => s.slice(key.length).trim()))]]));
+let BASE_NAMES = {};
+let CLASS_LABELS = Object.fromEntries(TURMAS.map(t => [t,t.replace(/^(\d)([AB])$/,'$1º Ano $2')]));
+let ARCHIVED_CLASSES = [];
+let REMOVED_TEACHERS = [];
+let UNDO_STACK = [];
+let activeYear = '2026';
+let yearRegistry = null;
+const YEARS_STORAGE_KEY = 'horario-escolar-anos-v1';
+const $ = id => document.getElementById(id);
+let editingUnlocked=false;
+const EDITING_DIALOGS=['editor','year-manager','new-year-dialog','year-settings','schedule-dialog','catalog-teacher-dialog','import-teachers-dialog','delete-teacher-dialog'];
+function signalEditingLocked() {
+  for(const id of EDITING_DIALOGS) if($(id).open) $(id).close();
+  if($('history-dialog').open) $('history-dialog').close();
+  const button=$('edit-lock');
+  button.classList.remove('lock-shake');
+  void button.offsetWidth;
+  button.classList.add('lock-shake');
+  $('lock-status').textContent='Edições bloqueadas. Clique no cadeado abaixo do histórico para desbloquear.';
+}
+function requestEditing() {
+  if(editingUnlocked) return true;
+  signalEditingLocked(); return false;
+}
+function requireEditing() {
+  if(!requestEditing()) throw new Error('Edições bloqueadas. Clique no cadeado para desbloquear.');
+}
+function updateEditingLock() {
+  $('lock-icon').textContent=editingUnlocked?'🔓':'🔒';
+  $('lock-label').textContent=editingUnlocked?'Edições liberadas':'Edições bloqueadas';
+  $('edit-lock').setAttribute('aria-pressed',String(editingUnlocked));
+  $('edit-lock').setAttribute('aria-label',editingUnlocked?'Bloquear edições':'Desbloquear edições');
+  $('edit-lock').title=editingUnlocked?'Clique para bloquear as edições':'Clique para desbloquear as edições';
+}
+$('edit-lock').addEventListener('click',()=>{
+  editingUnlocked=!editingUnlocked;
+  $('edit-lock').classList.remove('lock-shake');
+  if(!editingUnlocked) for(const id of EDITING_DIALOGS) if($(id).open) $(id).close();
+  updateEditingLock();
+  $('lock-status').textContent=editingUnlocked?'Edições liberadas. Clique novamente no cadeado para bloquear.':'Edições bloqueadas.';
+});
+$('edit-lock').addEventListener('animationend',()=> $('edit-lock').classList.remove('lock-shake'));
+
+const escapeHtml = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function contrastColor(hex) {
+  const rgb = hex.slice(1).match(/../g).map(v => parseInt(v,16)/255).map(v => v <= .04045 ? v/12.92 : ((v+.055)/1.055)**2.4);
+  return rgb[0]*.2126 + rgb[1]*.7152 + rgb[2]*.0722 > .179 ? '#1a1a1a' : '#ffffff';
+}
+function defaultProfile(key) {
+  return {name:key === 'default' ? 'Sem professor' : (BASE_NAMES[key] || key), color:PROF_COLORS[key].l, subjects:Object.fromEntries((SUBJECTS[key] || []).map(s => [s,s]))};
+}
+function validAssignments(assignments,key) {
+  return assignments === undefined || (assignments && typeof assignments === 'object' && !Array.isArray(assignments) && Object.keys(assignments).every(s => SUBJECTS[key].includes(s) && assignments[s] && typeof assignments[s].name === 'string' && assignments[s].name.trim().length > 0 && assignments[s].name.length <= 80 && /^#[0-9a-f]{6}$/i.test(assignments[s].color)));
+}
+function validProfile(profile,key) {
+  return profile && validAssignments(profile.assignments,key) && typeof profile.name === 'string' && profile.name.trim().length > 0 && profile.name.length <= 80 && /^#[0-9a-f]{6}$/i.test(profile.color) && profile.subjects && SUBJECTS[key].every(s => typeof profile.subjects[s] === 'string' && profile.subjects[s].trim().length > 0 && profile.subjects[s].length <= 80);
+}
+function validateData(data) {
+  if (!data || data.version !== 1 || !data.global || !data.classes || typeof data.global !== 'object' || typeof data.classes !== 'object' || Array.isArray(data.global) || Array.isArray(data.classes)) throw new Error('Dados salvos inválidos.');
+  const clean = {version:1,global:{},classes:{},history:validateHistory(data.history)};
+  for (const key of Object.keys(data.global)) {
+    if (!Object.hasOwn(SUBJECTS,key) || !validProfile(data.global[key],key)) throw new Error('Professor ou matéria inválidos nos dados salvos.');
+    clean.global[key] = cleanProfile(data.global[key],key);
+  }
+  for (const turma of Object.keys(data.classes)) {
+    if (!Object.hasOwn(CLASS_LABELS,turma) || !data.classes[turma] || typeof data.classes[turma] !== 'object' || Array.isArray(data.classes[turma])) throw new Error('Turma inválida nos dados salvos.');
+    clean.classes[turma] = {};
+    for (const key of Object.keys(data.classes[turma])) {
+      if (!Object.hasOwn(SUBJECTS,key) || !validProfile(data.classes[turma][key],key)) throw new Error('Professor ou matéria inválidos nos dados salvos.');
+      clean.classes[turma][key] = cleanProfile(data.classes[turma][key],key);
+    }
+  }
+  return clean;
+}
+function cleanProfile(profile,key) {
+  return {name:profile.name.trim(),color:profile.color,subjects:Object.fromEntries(SUBJECTS[key].map(s => [s,profile.subjects[s].trim()])),assignments:Object.fromEntries(Object.entries(profile.assignments || {}).map(([s,p]) => [s,{name:p.name.trim(),color:p.color}]))};
+}
+let edits = {version:1,global:{},classes:{},history:[]};
+try {
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored) edits = validateData(JSON.parse(stored));
+} catch(error) { $('notice').textContent = 'Não foi possível carregar os dados salvos neste navegador.'; }
+function profileFor(key,turma) {
+  return edits.classes[turma]?.[key] || edits.global[key] || defaultProfile(key);
+}
+function lessonProfile(key,turma,subject) {
+  const profile = profileFor(key,turma);
+  return {...profile,...profile.assignments?.[subject]};
+}
+function displaySubject(original,turma) {
+  const key = getProfName(original);
+  if (key === 'default') return original;
+  const subject = original.slice(key.length).trim();
+  const profile = lessonProfile(key,turma,subject);
+  return profile.name + ' · ' + (profile.subjects[subject] || subject);
+}
+function persist(next,rawNext = RAW) {
+  requireEditing();
+  const registry = JSON.parse(JSON.stringify(yearRegistry));
+  registry.years[activeYear] = prepareUndoRecord(captureYear(next,rawNext));
+  saveRegistry(registry);
+  edits = next;
+  RAW = rawNext;
+  UNDO_STACK = registry.years[activeYear].undoStack;
+}
+
+function availableSubjects(key) {
+  if ($('edit-scope').value === 'all') return SUBJECTS[key];
+  const turma = $('turma-sel').value;
+  return SUBJECTS[key].filter(s => DIAS.some(day => RAW[day][turma].includes(key+' '+s)));
+}
+
+function validSnapshot(p) {
+  return p && typeof p.name === 'string' && p.name.trim().length > 0 && p.name.length <= 80 && typeof p.subject === 'string' && p.subject.trim().length > 0 && p.subject.length <= 80 && /^#[0-9a-f]{6}$/i.test(p.color);
+}
+function validateHistory(history) {
+  if (history === undefined) return [];
+  if (!Array.isArray(history)) throw new Error('Histórico salvo inválido.');
+  return history.map(entry => {
+    if(entry?.kind==='undo') {
+      if(typeof entry.at!=='string' || !Number.isFinite(Date.parse(entry.at)) || typeof entry.label!=='string' || !entry.label || entry.label.length>240) throw new Error('Registro de desfazer inválido.');
+      return {kind:'undo',at:entry.at,label:entry.label};
+    }
+    if(entry?.kind==='teacher-removed') {
+      if(typeof entry.at!=='string' || !Number.isFinite(Date.parse(entry.at)) || typeof entry.name!=='string' || !entry.name.trim() || !Array.isArray(entry.subjects) || !entry.subjects.every(s=>typeof s==='string' && s.length<=80) || !Number.isInteger(entry.lessons) || entry.lessons<0) throw new Error('Registro de exclusão inválido.');
+      return {kind:'teacher-removed',at:entry.at,name:entry.name,subjects:[...entry.subjects],lessons:entry.lessons};
+    }
+    if (entry?.kind === 'import') {
+      if (typeof entry.at!=='string' || !Number.isFinite(Date.parse(entry.at)) || !/^\d{4}$/.test(entry.sourceYear) || !Array.isArray(entry.imported) || !entry.imported.length || entry.imported.some(p=>!p || typeof p.name!=='string' || !p.name.trim() || p.name.length>80 || !Array.isArray(p.subjects) || !p.subjects.length || p.subjects.some(s=>typeof s!=='string' || !s.trim() || s.length>80) || !/^#[0-9a-f]{6}$/i.test(p.color) || !['teacher-added','subjects-added'].includes(p.action))) throw new Error('Registro de importação inválido.');
+      return {kind:'import',at:entry.at,sourceYear:entry.sourceYear,imported:entry.imported.map(p=>({name:p.name,subjects:[...p.subjects],color:p.color,action:p.action}))};
+    }
+    if (entry?.kind === 'classes') {
+      if (typeof entry.at !== 'string' || !Number.isFinite(Date.parse(entry.at)) || ![entry.added,entry.hidden,entry.reactivated].every(list=>Array.isArray(list) && list.every(s=>typeof s==='string' && s.length<=80))) throw new Error('Alteração de turmas inválida.');
+      return {kind:'classes',at:entry.at,added:[...entry.added],hidden:[...entry.hidden],reactivated:[...entry.reactivated]};
+    }
+    if (entry?.kind === 'catalog') {
+      if (typeof entry.at !== 'string' || !Number.isFinite(Date.parse(entry.at)) || !['teacher-added','subjects-added'].includes(entry.action) || typeof entry.name !== 'string' || !entry.name.trim() || entry.name.length>80 || !Array.isArray(entry.subjects) || !entry.subjects.length || !entry.subjects.every(s=>typeof s==='string' && s.trim() && s.length<=80)) throw new Error('Alteração de professor inválida.');
+      return {kind:'catalog',at:entry.at,name:entry.name,subjects:[...entry.subjects],action:entry.action};
+    }
+    if (!entry || typeof entry.at !== 'string' || !Number.isFinite(Date.parse(entry.at)) || !['all','class'].includes(entry.scope) || !Array.isArray(entry.changes) || !entry.changes.length) throw new Error('Registro de histórico inválido.');
+    return {at:entry.at,scope:entry.scope,changes:entry.changes.map(change => {
+      if (!change || typeof change.teacher!=='string' || !change.teacher || change.teacher.length>80 || typeof change.originalSubject!=='string' || !change.originalSubject || change.originalSubject.length>80 || !Array.isArray(change.turmas) || (!change.turmas.length && !change.catalog) || !change.turmas.every(t => typeof t==='string' && /^[A-Za-z0-9]+$/.test(t) && t.length<=80) || !validSnapshot(change.before) || !validSnapshot(change.after)) throw new Error('Alteração no histórico inválida.');
+      const snapshot = p => ({name:p.name,subject:p.subject,color:p.color});
+      if (change.slot && (!DIAS.includes(change.slot.day) || !Number.isInteger(change.slot.index) || change.slot.index < 0 || change.slot.index > 4)) throw new Error('Aula inválida no histórico.');
+      return {teacher:change.teacher,originalSubject:change.originalSubject,turmas:[...new Set(change.turmas)],before:snapshot(change.before),after:snapshot(change.after),...(change.catalog ? {catalog:true} : {}),...(change.slot ? {slot:{day:change.slot.day,index:change.slot.index},...(typeof change.beforeValue==='string' && change.beforeValue.length<=180?{beforeValue:change.beforeValue}:{}),...(typeof change.afterValue==='string' && change.afterValue.length<=180?{afterValue:change.afterValue}:{})} : {})};
+    })};
+  });
+}
+function createHistoryEntry(key,selected,all,name,color) {
+  const groups = new Map();
+  const turmas = all ? TURMAS : [$('turma-sel').value];
+  for (const s of selected) for (const turma of turmas) {
+    if (!DIAS.some(day => RAW[day][turma].includes(key+' '+s))) continue;
+    const p = lessonProfile(key,turma,s);
+    const before = {name:p.name,subject:p.subjects[s],color:p.color};
+    const after = {name,subject:$('subject-'+SUBJECTS[key].indexOf(s)).value.trim(),color};
+    if (before.name === after.name && before.subject === after.subject && before.color.toLowerCase() === after.color.toLowerCase()) continue;
+    const groupId = JSON.stringify([s,before,after]);
+    if (!groups.has(groupId)) groups.set(groupId,{teacher:key,originalSubject:s,turmas:[],before,after});
+    groups.get(groupId).turmas.push(turma);
+  }
+  if (all) for (const s of selected) {
+    if ([...groups.values()].some(change=>change.originalSubject===s)) continue;
+    if (TURMAS.some(t=>DIAS.some(day=>RAW[day][t].includes(key+' '+s)))) continue;
+    const p=edits.global[key] || defaultProfile(key),assignment=p.assignments?.[s];
+    const before={name:assignment?.name || p.name,subject:p.subjects[s],color:assignment?.color || p.color};
+    const after={name,subject:$('subject-'+SUBJECTS[key].indexOf(s)).value.trim(),color};
+    if (before.name!==after.name || before.subject!==after.subject || before.color.toLowerCase()!==after.color.toLowerCase()) groups.set('catalog:'+s,{teacher:key,originalSubject:s,turmas:[],before,after,catalog:true});
+  }
+  return {at:new Date().toISOString(),scope:all ? 'all' : 'class',changes:[...groups.values()]};
+}
+function historyValue(p,label,entryIndex,changeIndex) {
+  const side=label==='Antes'?'before':'after';
+  const active=historySideIsActive(entryIndex,changeIndex,side);
+  return `<button type="button" class="history-value restore-before${active?' history-state-active':''}" data-restore-entry="${entryIndex}" data-restore-change="${changeIndex}" data-restore-side="${side}" aria-pressed="${active}" title="Usar os valores de ${label.toLowerCase()}"><strong>${label}${active?' ✓':''}</strong><span class="value-line">${escapeHtml(p.name)}</span><span class="value-line">${escapeHtml(p.subject)}</span><span class="value-line"><span class="history-swatch" style="background:${p.color}"></span>${escapeHtml(p.color.toUpperCase())}</span><span class="restore-hint">${active?'Em uso':'Clique para usar'}</span></button>`;
+}
+
+function renderHistory() {
+  refreshUndoControl();
+  $('history-title').textContent = 'Histórico de alterações · '+activeYear;
+  const entries = edits.history || [];
+  if (!entries.length) { $('history-list').innerHTML = '<p class="help">Nenhuma alteração registrada ainda. As próximas alterações salvas aparecerão aqui.</p>'; return; }
+  const formatter = new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'medium',timeZone:'America/Sao_Paulo'});
+  $('history-list').innerHTML = entries.map((entry,entryIndex) => entry.kind ? renderAdministrativeHistory(entry,formatter) : `<article class="history-entry"><h3><time datetime="${escapeHtml(entry.at)}">${escapeHtml(formatter.format(new Date(entry.at)))}</time></h3><p class="help">${entry.scope === 'all' ? 'Aplicação em todas as turmas' : 'Aplicação na turma selecionada'} · Horário de Brasília</p>${entry.changes.map((change,changeIndex) => `<div class="history-change"><p><b>Turma(s):</b> ${change.catalog ? 'Cadastro do ano (sem aulas atribuídas)' : change.turmas.map(t => escapeHtml(CLASS_LABELS[t] || t.replace(/^([6-9])([A-F])$/,'$1º Ano $2'))).join(', ')}</p>${change.slot ? '<p>'+escapeHtml(change.slot.day)+' · '+(change.slot.index+1)+'ª aula</p>' : ''}${historyValuePair(change,entryIndex,changeIndex)}</div>`).join('')}</article>`).join('');
+}
+function historyValuePair(change,entryIndex,changeIndex) {
+  return `<div class="history-values">${historyValue(change.before,'Antes',entryIndex,changeIndex)}${historyValue(change.after,'Depois',entryIndex,changeIndex)}</div>`;
+}
+$('open-history').addEventListener('click', () => { renderHistory(); $('history-dialog').showModal(); });
+$('close-history').addEventListener('click', () => $('history-dialog').close());
+
+function populateTeachers(preferred,selected) {
+  const turma = $('turma-sel').value;
+  const all = $('edit-scope').value === 'all';
+  const list = all ? TEACHERS : TEACHERS.filter(key => DIAS.some(day => RAW[day][turma].some(s => getProfName(s) === key)));
+  $('edit-teacher').innerHTML = list.map(key => {
+    const subjects = all ? SUBJECTS[key] : SUBJECTS[key].filter(s => DIAS.some(day => RAW[day][turma].includes(key+' '+s)));
+    const names = [...new Set(subjects.map(s => lessonProfile(key,turma,s).name))].join(' / ');
+    return `<option value="${escapeHtml(key)}">${escapeHtml(names)}${names !== (BASE_NAMES[key] || key) ? ' (original: '+escapeHtml(BASE_NAMES[key] || key)+')' : ''}</option>`;
+  }).join('');
+  if (list.includes(preferred)) $('edit-teacher').value = preferred;
+  fillEditor(selected);
+}
+function fillEditor(selected) {
+  const turma = $('turma-sel').value;
+  const key = $('edit-teacher').value;
+  const all = $('edit-scope').value === 'all';
+  const subjects = availableSubjects(key);
+  const checked = Array.isArray(selected) ? selected : subjects;
+  const first = checked.find(s => subjects.includes(s)) || subjects[0];
+  const p = lessonProfile(key,turma,first);
+  $('edit-name').value = p.name;
+  $('edit-color').value = p.color;
+  $('subjects').innerHTML = '<p class="help">Marque as matérias que receberão o nome e a cor acima. Edite o título da matéria se desejar.</p>'+subjects.map(s => {
+    const i = SUBJECTS[key].indexOf(s);
+    const p = lessonProfile(key,turma,s);
+    const included = checked.includes(s);
+    return `<div class="subject-choice"><label for="choose-${i}"><input type="checkbox" id="choose-${i}" data-subject-index="${i}" ${included ? 'checked' : ''} />${escapeHtml(p.subjects[s])} · ${escapeHtml(p.name)}</label><input id="subject-${i}" aria-label="Nome da matéria ${escapeHtml(p.subjects[s])}" required maxlength="80" value="${escapeHtml(p.subjects[s])}" ${included ? '' : 'disabled'} /></div>`;
+  }).join('');
+  $('scope-help').textContent = all ? 'Somente as matérias marcadas serão alteradas em todas as turmas, inclusive onde houve edição individual.' : 'Somente as matérias marcadas de '+$('turma-sel').selectedOptions[0].textContent+' serão alteradas.';
+  $('editor-error').textContent = '';
+  updateImpact(); updatePreview();
+}
+function selectedSubjects() {
+  const key = $('edit-teacher').value;
+  return availableSubjects(key).filter(s => $('choose-'+SUBJECTS[key].indexOf(s)).checked);
+}
+function updateImpact() {
+  const key = $('edit-teacher').value;
+  const selected = selectedSubjects();
+  const affected = $('edit-scope').value === 'all' ? TURMAS : [$('turma-sel').value];
+  const count = DIAS.reduce((n,day) => n+affected.reduce((m,t) => m+RAW[day][t].filter(s => getProfName(s) === key && selected.includes(s.slice(key.length).trim())).length,0),0);
+  $('impact').textContent = `${selected.length} matéria(s) marcada(s): ${count} aulas na semana serão atualizadas. Dias e horários serão mantidos.`;
+}
+function updatePreview() {
+  const sample = $('color-preview');
+  sample.textContent = $('edit-name').value.trim() || 'Prévia';
+  sample.style.background = $('edit-color').value;
+  sample.style.color = contrastColor($('edit-color').value);
+}
+function openTeacherEditor(key,selected,scope='class') {
+  if(!requestEditing()) return;
+  $('edit-scope').value = scope;
+  populateTeachers(key,selected);
+  $('editor').showModal();
+}
+function handleTeacherClick(event) {
+  const button = event.target.closest('button[data-teacher]');
+  if (!button) { const empty=event.target.closest('button[data-empty-slot]'); if(empty) openScheduleEditor(empty.dataset.day); return; }
+  openTeacherEditor(button.dataset.teacher,JSON.parse(button.dataset.subjects));
+}
+$('table-container').addEventListener('click',handleTeacherClick);
+$('legend').addEventListener('click',handleTeacherClick);
+$('subjects').addEventListener('change',event => {
+  const index = event.target.dataset.subjectIndex;
+  if (index === undefined) return;
+  $('subject-'+index).disabled = !event.target.checked;
+  $('editor-error').textContent = '';
+  updateImpact();
+});
+$('cancel-editor').addEventListener('click', () => $('editor').close());
+$('edit-scope').addEventListener('change', () => populateTeachers($('edit-teacher').value));
+$('edit-teacher').addEventListener('change', () => fillEditor());
+$('edit-name').addEventListener('input',updatePreview);
+$('edit-color').addEventListener('input',updatePreview);
+$('editor-form').addEventListener('submit',event => {
+  event.preventDefault();
+  if(!requestEditing()) return;
+  const key = $('edit-teacher').value;
+  const turma = $('turma-sel').value;
+  const all = $('edit-scope').value === 'all';
+  const selected = selectedSubjects();
+  if (!selected.length) { $('editor-error').textContent = 'Marque pelo menos uma matéria para alterar.'; return; }
+  const name = $('edit-name').value.trim();
+  const color = $('edit-color').value;
+  if (!name || name.length > 80 || selected.some(s => !$('subject-'+SUBJECTS[key].indexOf(s)).value.trim())) {
+    $('editor-error').textContent = 'Preencha o nome e as matérias marcadas.'; return;
+  }
+  const next = JSON.parse(JSON.stringify(edits));
+  function applyTo(base) {
+    const p = JSON.parse(JSON.stringify(base));
+    p.assignments ||= {};
+    for (const s of selected) {
+      p.assignments[s] = {name,color};
+      p.subjects[s] = $('subject-'+SUBJECTS[key].indexOf(s)).value.trim();
+    }
+    return p;
+  }
+  if (all) {
+    next.global[key] = applyTo(edits.global[key] || defaultProfile(key));
+    for (const t of TURMAS) if (next.classes[t]?.[key]) next.classes[t][key] = applyTo(profileFor(key,t));
+  } else {
+    next.classes[turma] ||= {};
+    next.classes[turma][key] = applyTo(profileFor(key,turma));
+  }
+  const historyEntry = createHistoryEntry(key,selected,all,name,color);
+  if (!historyEntry.changes.length) {
+    $('editor').close();
+    $('notice').textContent = 'Nenhuma mudança: os valores já estavam salvos.';
+    return;
+  }
+  next.history ||= [];
+  next.history.unshift(historyEntry);
+  try { persist(validateData(next)); }
+  catch(error) { $('editor-error').textContent = error.message; return; }
+  $('editor').close(); render();
+  if ($('year-settings').open) renderTeacherCatalog();
+  $('notice').textContent = 'Alterações salvas somente nas matérias marcadas '+(all ? 'de todas as turmas.' : 'de '+$('turma-sel').selectedOptions[0].textContent+'.');
+});
+function captureYear(editsData = edits,rawData = RAW) {
+  return JSON.parse(JSON.stringify({raw:rawData,colors:PROF_COLORS,names:BASE_NAMES,subjects:SUBJECTS,classLabels:CLASS_LABELS,archivedClasses:ARCHIVED_CLASSES,removedTeachers:REMOVED_TEACHERS,undoStack:UNDO_STACK,edits:editsData}));
+}
+function applyYearModel(record) {
+  RAW = JSON.parse(JSON.stringify(record.raw));
+  PROF_COLORS = JSON.parse(JSON.stringify(record.colors));
+  BASE_NAMES = {...record.names};
+  SUBJECTS = JSON.parse(JSON.stringify(record.subjects));
+  CLASS_LABELS = {...record.classLabels};
+  ARCHIVED_CLASSES = [...(record.archivedClasses || [])];
+  TURMAS = Object.keys(CLASS_LABELS).filter(t=>!ARCHIVED_CLASSES.includes(t));
+  REMOVED_TEACHERS = [...(record.removedTeachers || [])];
+  UNDO_STACK = JSON.parse(JSON.stringify(record.undoStack || []));
+  TEACHERS = Object.keys(SUBJECTS).filter(k=>!REMOVED_TEACHERS.includes(k));
+  edits = validateData(record.edits);
+}
+function validateYearModel(record) {
+  const text = v => typeof v === 'string' && v.trim().length > 0 && v.length <= 80;
+  const object = v => v && typeof v === 'object' && !Array.isArray(v);
+  if (!record || !object(record.raw) || !object(record.colors) || !object(record.names) || !object(record.subjects) || !object(record.classLabels)) throw new Error('Cadastro de ano inválido.');
+  const classes = Object.keys(record.classLabels);
+  const teachers = Object.keys(record.subjects);
+  if (!classes.length || !teachers.length || classes.some(c => !/^[A-Za-z0-9]+$/.test(c) || !text(record.classLabels[c])) || teachers.some(k => !/^[A-Za-zÀ-ÿ0-9]+$/.test(k) || !Array.isArray(record.subjects[k]) || !record.subjects[k].length || !record.subjects[k].every(text) || !record.colors[k] || !/^#[0-9a-f]{6}$/i.test(record.colors[k].l) || (record.names[k] !== undefined && !text(record.names[k])))) throw new Error('Turmas ou professores inválidos.');
+  if (record.archivedClasses !== undefined && (!Array.isArray(record.archivedClasses) || record.archivedClasses.some(t=>!classes.includes(t)) || classes.every(t=>record.archivedClasses.includes(t)))) throw new Error('Seleção de turmas inválida.');
+  if (record.removedTeachers !== undefined && (!Array.isArray(record.removedTeachers) || record.removedTeachers.some(k=>!teachers.includes(k)))) throw new Error('Lista de professores excluídos inválida.');
+  if (record.undoStack !== undefined && (!Array.isArray(record.undoStack) || record.undoStack.length>20)) throw new Error('Dados de desfazer inválidos.');
+  for(const item of record.undoStack || []) {
+    if(!item || typeof item.at!=='string' || !Number.isFinite(Date.parse(item.at)) || typeof item.label!=='string' || item.label.length>240 || !item.before || Object.hasOwn(item.before,'undoStack')) throw new Error('Alteração para desfazer inválida.');
+    validateYearModel(item.before);
+  }
+  if (!record.colors.default || !/^#[0-9a-f]{6}$/i.test(record.colors.default.l)) throw new Error('Cor padrão inválida.');
+  for (const day of DIAS) {
+    if (!object(record.raw[day])) throw new Error('Dia da semana inválido.');
+    for (const turma of classes) {
+      const slots = record.raw[day][turma];
+      if (!Array.isArray(slots) || slots.length !== 5 || slots.some(s => {
+        if (s === '—') return false;
+        if (typeof s !== 'string') return true;
+        const key = s.split(' ')[0];
+        return !teachers.includes(key) || (record.removedTeachers || []).includes(key) || !record.subjects[key].includes(s.slice(key.length).trim());
+      })) throw new Error('Grade de horários inválida.');
+    }
+  }
+  return record;
+}
+function saveRegistry(registry) {
+  try { localStorage.setItem(YEARS_STORAGE_KEY,JSON.stringify(registry)); }
+  catch(error) { throw new Error('Não foi possível salvar neste navegador. Verifique se o armazenamento está permitido e tente novamente.'); }
+  yearRegistry = registry;
+}
+function initializeYears() {
+  const legacy = captureYear();
+  yearRegistry = {version:1,activeYear:'2026',years:{'2026':legacy}};
+  try {
+    const stored = localStorage.getItem(YEARS_STORAGE_KEY);
+    if (stored) {
+      const registry = JSON.parse(stored);
+      if (!registry || registry.version !== 1 || !registry.years || typeof registry.years !== 'object' || Array.isArray(registry.years) || !Object.hasOwn(registry.years,registry.activeYear) || !Object.hasOwn(registry.years,'2026')) throw new Error('Registro de anos inválido.');
+      for (const year of Object.keys(registry.years)) {
+        if (!/^\d{4}$/.test(year) || Number(year) < 2000 || Number(year) > 2199) throw new Error('Ano inválido.');
+        applyYearModel(validateYearModel(registry.years[year]));
+      }
+      yearRegistry = registry;
+    }
+    activeYear = yearRegistry.activeYear;
+    applyYearModel(yearRegistry.years[activeYear]);
+  } catch(error) {
+    yearRegistry = {version:1,activeYear:'2026',years:{'2026':legacy}};
+    activeYear = '2026';
+    applyYearModel(legacy);
+    $('notice').textContent = 'Não foi possível carregar o cadastro de anos. Os dados originais de 2026 estão disponíveis.';
+  }
+  renderYearControls();
+}
+function renderYearControls() {
+  $('year-title').textContent = 'Horário escolar '+activeYear+' ▾';
+  document.title = 'Horário Escolar '+activeYear;
+  $('turma-sel').innerHTML = TURMAS.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(CLASS_LABELS[t])}</option>`).join('');
+  renderYearList();
+}
+function renderYearList() {
+  $('year-list').innerHTML = Object.keys(yearRegistry.years).sort((a,b) => Number(b)-Number(a)).map(year => `<button type="button" data-year="${year}" aria-current="${year === activeYear}">${year}${year === activeYear ? ' · Ano selecionado' : ''}</button>`).join('');
+}
+function switchYear(year) {
+  if (!Object.hasOwn(yearRegistry.years,year)) throw new Error('Ano não cadastrado.');
+  const next = JSON.parse(JSON.stringify(yearRegistry));
+  next.activeYear = year;
+  saveRegistry(next);
+  activeYear = year;
+  applyYearModel(next.years[year]);
+  renderYearControls(); renderTabs(); render();
+  $('notice').textContent = 'Ano '+year+' selecionado.';
+}
+$('year-title').addEventListener('click', () => { renderYearList(); $('year-manager-error').textContent=''; $('year-manager').showModal(); });
+$('close-years').addEventListener('click', () => $('year-manager').close());
+$('year-list').addEventListener('click',event => {
+  const button = event.target.closest('button[data-year]'); if (!button) return;
+  try { switchYear(button.dataset.year); $('year-manager').close(); }
+  catch(error) { $('year-manager-error').textContent=error.message; }
+});
+let teacherDraftIds = [];
+let teacherDraftCounter = 0;
+const DRAFT_COLORS = ['#EEEDFE','#E6F1FB','#E1F5EE','#FAEEDA','#FBEAF0','#EAF3DE'];
+function addTeacherDraft(initial = {}) {
+  if(!requestEditing()) return;
+  const id = ++teacherDraftCounter;
+  teacherDraftIds.push(id);
+  $('new-teachers').insertAdjacentHTML('beforeend',`<section class="new-teacher-row" id="teacher-row-${id}"><div class="teacher-row-head"><h3>Professor(a)</h3><button type="button" class="small-button" data-remove-teacher="${id}" aria-label="Remover este professor do cadastro">Remover</button></div><label for="teacher-name-${id}">Nome</label><input id="teacher-name-${id}" required maxlength="80" autocomplete="off" /><label for="teacher-subjects-${id}">Matérias</label><input id="teacher-subjects-${id}" required placeholder="Ex.: Matemática, Ciências" /><p class="help">Separe as matérias por vírgulas.</p><label for="teacher-color-${id}">Cor</label><input type="color" id="teacher-color-${id}" value="${DRAFT_COLORS[(id-1)%DRAFT_COLORS.length]}" /></section>`);
+  $('teacher-name-'+id).value=initial?.name || '';
+  $('teacher-subjects-'+id).value=Array.isArray(initial?.subjects)?initial.subjects.join(', '):'';
+  $('teacher-color-'+id).value=initial?.color || DRAFT_COLORS[(id-1)%DRAFT_COLORS.length];
+}
+function openNewYear() {
+  if(!requestEditing()) return;
+  $('new-year-form').reset();
+  $('draft-import-notice').textContent='';
+  let suggested = Number(activeYear)+1;
+  while (yearRegistry.years[String(suggested)]) suggested++;
+  $('new-year-number').value = String(suggested);
+  renderClassPicker('new-year-grades','new');
+  $('new-teachers').innerHTML = '';
+  teacherDraftIds = [];
+  teacherDraftCounter = 0;
+  addTeacherDraft();
+  $('new-year-error').textContent='';
+  $('year-manager').close();
+  $('new-year-dialog').showModal();
+}
+$('register-year').addEventListener('click',openNewYear);
+$('add-new-teacher').addEventListener('click',addTeacherDraft);
+$('new-teachers').addEventListener('click',event => {
+  const button = event.target.closest('button[data-remove-teacher]'); if (!button) return;
+  const id = Number(button.dataset.removeTeacher);
+  $('teacher-row-'+id).remove();
+  teacherDraftIds = teacherDraftIds.filter(i => i !== id);
+});
+$('cancel-new-year').addEventListener('click', () => $('new-year-dialog').close());
+function buildNewYear(year,labels,teachers) {
+  if (!/^\d{4}$/.test(year) || Number(year)<2000 || Number(year)>2199) throw new Error('Informe um ano entre 2000 e 2199.');
+  if (Object.hasOwn(yearRegistry.years,year)) throw new Error('Este ano já está cadastrado. Selecione-o na lista de anos.');
+  const validText = v => typeof v === 'string' && v.trim().length > 0 && v.trim().length <= 80;
+  if (!labels.length || labels.some(s => !validText(s))) throw new Error('Informe pelo menos uma turma, com até 80 caracteres por nome.');
+  if (new Set(labels.map(s=>s.trim().toLocaleLowerCase('pt-BR'))).size !== labels.length) throw new Error('Há turmas repetidas. Confira os nomes.');
+  if (!teachers.length || teachers.some(t => !validText(t.name) || !Array.isArray(t.subjects) || !t.subjects.length || !t.subjects.every(validText) || !/^#[0-9a-f]{6}$/i.test(t.color))) throw new Error('Preencha o nome, as matérias e a cor de cada professor. Use até 80 caracteres por nome ou matéria.');
+  if (new Set(teachers.map(t=>t.name.trim().toLocaleLowerCase('pt-BR'))).size !== teachers.length) throw new Error('Há professores com o mesmo nome. Diferencie os nomes para identificá-los.');
+  const classLabels = Object.fromEntries(labels.map(s=>{const p=parseFundamentalClass(s);if(!p)throw new Error('Selecione anos do 6º ao 9º e turmas de A a F.');return [p.grade+p.letter,p.grade+'º Ano '+p.letter];}));
+  const names = {},colors={default:{l:'#F1EFE8'}},subjects={};
+  teachers.forEach((teacher,i) => {
+    const key='p'+(i+1);
+    names[key]=teacher.name.trim(); colors[key]={l:teacher.color};
+    const seen = new Set();
+    subjects[key]=teacher.subjects.map(s=>s.trim()).filter(s=>{const normalized=s.toLocaleLowerCase('pt-BR');if(seen.has(normalized)) return false;seen.add(normalized);return true;});
+  });
+  const raw=Object.fromEntries(DIAS.map(day=>[day,Object.fromEntries(Object.keys(classLabels).map(t=>[t,Array(5).fill('—')]))]));
+  return validateYearModel({raw,colors,names,subjects,classLabels,edits:{version:1,global:{},classes:{},history:[]}});
+}
+function registerYear(year,labels,teachers) {
+  requireEditing();
+  const record = buildNewYear(year,labels,teachers);
+  const next = JSON.parse(JSON.stringify(yearRegistry));
+  next.years[year]=record; next.activeYear=year;
+  saveRegistry(next);
+  activeYear=year; applyYearModel(record);
+  renderYearControls(); renderTabs(); render();
+}
+$('new-year-form').addEventListener('submit',event => {
+  event.preventDefault();
+  if(!requestEditing()) return;
+  const year = $('new-year-number').value.trim();
+  const labels = selectedClassLabels('new');
+  const teachers = teacherDraftIds.map(id=>({name:$('teacher-name-'+id).value.trim(),subjects:$('teacher-subjects-'+id).value.split(',').map(s=>s.trim()).filter(Boolean),color:$('teacher-color-'+id).value}));
+  try {
+    registerYear(year,labels,teachers);
+    $('new-year-dialog').close();
+    openYearSettings();
+    $('notice').textContent='Ano '+year+' registrado. Selecione a turma e o dia e clique em “Montar horários” para preencher as aulas.';
+  } catch(error) { $('new-year-error').textContent=error.message; }
+});
+function scheduleSnapshot(value,turma) {
+  if (!value || value==='—') return {name:'Sem professor',subject:'Sem aula',color:PROF_COLORS.default.l};
+  const key=getProfName(value),subject=value.slice(key.length).trim(),p=lessonProfile(key,turma,subject);
+  return {name:p.name,subject:p.subjects[subject],color:p.color};
+}
+function openScheduleEditor(day) {
+  if(!requestEditing()) return;
+  if(typeof day==='string' && DIAS.includes(day)) currentDay=day;
+  $('year-manager').close();
+  const turma=$('turma-sel').value;
+  $('schedule-context').textContent=activeYear+' · '+CLASS_LABELS[turma]+' · '+currentDay;
+  const options=TEACHERS.flatMap(key=>SUBJECTS[key].map(subject=>({value:key+' '+subject,label:displaySubject(key+' '+subject,turma)})));
+  $('schedule-fields').innerHTML=Array.from({length:5},(_,i)=>`<div class="schedule-row"><label for="slot-${i}">${i+1}ª aula</label><select id="slot-${i}"><option value="—">Sem aula</option>${options.map(o=>`<option value="${escapeHtml(o.value)}">${escapeHtml(o.label)}</option>`).join('')}</select></div>`).join('');
+  for (let i=0;i<5;i++) $('slot-'+i).value=RAW[currentDay][turma][i];
+  $('schedule-error').textContent=''; $('schedule-dialog').showModal();
+}
+$('open-schedule').addEventListener('click',openScheduleEditor);
+$('cancel-schedule').addEventListener('click',()=>$('schedule-dialog').close());
+function saveSchedule(values) {
+  requireEditing();
+  const turma=$('turma-sel').value;
+  if (!Array.isArray(values) || values.length!==5 || values.some(value=>value!=='—' && !TEACHERS.some(key=>SUBJECTS[key].some(s=>value===key+' '+s)))) throw new Error('Selecione um professor e uma matéria válidos em cada aula.');
+  const changes=[];
+  values.forEach((value,i)=>{
+    const previous=RAW[currentDay][turma][i]; if (value===previous) return;
+    const ref=value==='—'?previous:value,key=getProfName(ref);
+    changes.push({teacher:key,originalSubject:ref.slice(key.length).trim(),turmas:[turma],before:scheduleSnapshot(previous,turma),after:scheduleSnapshot(value,turma),slot:{day:currentDay,index:i},beforeValue:previous,afterValue:value});
+  });
+  if (!changes.length) return false;
+  const nextRaw=JSON.parse(JSON.stringify(RAW)); nextRaw[currentDay][turma]=[...values];
+  const next=JSON.parse(JSON.stringify(edits)); next.history.unshift({at:new Date().toISOString(),scope:'class',changes});
+  persist(validateData(next),nextRaw); render(); return true;
+}
+$('schedule-form').addEventListener('submit',event=>{
+  event.preventDefault();
+  if(!requestEditing()) return;
+  try {
+    const changed=saveSchedule(Array.from({length:5},(_,i)=>$('slot-'+i).value));
+    $('schedule-dialog').close(); $('notice').textContent=changed?'Horários salvos para '+CLASS_LABELS[$('turma-sel').value]+' · '+currentDay+'.':'Nenhuma mudança nos horários.';
+  } catch(error) { $('schedule-error').textContent=error.message; }
+});
+
+const FUNDAMENTAL_GRADES = [6,7,8,9];
+const CLASS_LETTERS = ['A','B','C','D','E','F'];
+function parseFundamentalClass(label) {
+  const match = label.trim().match(/^([6-9])\s*[º°o]?\s*(?:ano\s*)?([a-f])$/i);
+  return match ? {grade:Number(match[1]),letter:match[2].toUpperCase()} : null;
+}
+function renderClassPicker(container,prefix,labels = []) {
+  $(container).innerHTML = FUNDAMENTAL_GRADES.map(grade => {
+    const letters = labels.map(parseFundamentalClass).filter(c=>c?.grade===grade).map(c=>c.letter);
+    const enabled = letters.length>0;
+    const last = letters.sort().at(-1) || 'A';
+    return `<section class="grade-choice"><label class="grade-check" for="${prefix}-grade-${grade}"><input type="checkbox" id="${prefix}-grade-${grade}" data-grade="${grade}" ${enabled?'checked':''} />${grade}º Ano</label><div id="${prefix}-end-wrap-${grade}" ${enabled?'':'hidden'}><label for="${prefix}-end-${grade}">Irá até qual turma?</label><select id="${prefix}-end-${grade}" ${enabled?'':'disabled'}>${CLASS_LETTERS.map(letter=>`<option value="${letter}" ${letter===last?'selected':''}>${letter}${letter==='A'?' (somente A)':''}</option>`).join('')}</select></div></section>`;
+  }).join('')+`<p class="help" id="${prefix}-classes-summary" aria-live="polite"></p>`;
+  for (const grade of FUNDAMENTAL_GRADES) {
+    const letters=labels.map(parseFundamentalClass).filter(c=>c?.grade===grade).map(c=>c.letter).sort();
+    $(prefix+'-end-'+grade).value=letters.at(-1) || 'A';
+  }
+  updateClassPicker(prefix);
+}
+function selectedClassLabels(prefix) {
+  const labels=[];
+  for (const grade of FUNDAMENTAL_GRADES) {
+    if (!$(prefix+'-grade-'+grade).checked) continue;
+    const end = $(prefix+'-end-'+grade).value;
+    const lastIndex = CLASS_LETTERS.indexOf(end);
+    if (lastIndex<0) throw new Error('Escolha a última turma de A até F.');
+    for (const letter of CLASS_LETTERS.slice(0,lastIndex+1)) labels.push(grade+'º Ano '+letter);
+  }
+  return labels;
+}
+function updateClassPicker(prefix) {
+  for (const grade of FUNDAMENTAL_GRADES) {
+    const enabled = $(prefix+'-grade-'+grade).checked;
+    $(prefix+'-end-wrap-'+grade).hidden = !enabled;
+    $(prefix+'-end-'+grade).disabled = !enabled;
+  }
+  const labels=selectedClassLabels(prefix);
+  $(prefix+'-classes-summary').textContent=labels.length?'Turmas: '+labels.join(', ')+'.':'Selecione pelo menos um ano escolar, do 6º ao 9º.';
+}
+$('new-year-grades').addEventListener('change',()=>updateClassPicker('new'));
+$('manage-grades').addEventListener('change',()=>updateClassPicker('manage'));
+function openYearSettings() {
+  if(!requestEditing()) return;
+  $('year-manager').close();
+  $('settings-title').textContent='Turmas e professores · '+activeYear;
+  renderClassPicker('manage-grades','manage',TURMAS.map(t=>CLASS_LABELS[t]));
+  renderTeacherCatalog();
+  $('settings-error').textContent='';
+  $('settings-notice').textContent='';
+  $('year-settings').showModal();
+}
+function renderTeacherCatalog() {
+  $('teacher-catalog').innerHTML=TEACHERS.length?TEACHERS.map(key=>{
+    const base=edits.global[key] || defaultProfile(key);
+    const names=[...new Set(SUBJECTS[key].map(s=>base.assignments?.[s]?.name || base.name))].join(' / ');
+    return `<article class="catalog-teacher"><div><div class="catalog-name"><b>${escapeHtml(names)}</b><button type="button" class="trash-button" data-delete-teacher="${escapeHtml(key)}" title="Excluir ${escapeHtml(names)}" aria-label="Excluir ${escapeHtml(names)}"><span aria-hidden="true">🗑️</span></button></div><p class="help">${SUBJECTS[key].map(s=>escapeHtml(base.subjects[s])).join(', ')}</p></div><div class="catalog-actions"><button type="button" class="small-button" data-edit-catalog="${escapeHtml(key)}">Editar</button><button type="button" class="small-button" data-add-subject="${escapeHtml(key)}">+ Matérias</button></div></article>`;
+  }).join(''):'<p class="help">Nenhum professor cadastrado. Clique em “Adicionar professor(a)”.</p>';
+}
+$('open-year-settings').addEventListener('click',openYearSettings);
+$('close-settings').addEventListener('click',()=>$('year-settings').close());
+$('teacher-catalog').addEventListener('click',event=>{
+  const trash=event.target.closest('button[data-delete-teacher]');
+  if(trash) { openDeleteTeacher(trash.dataset.deleteTeacher); return; }
+  const edit=event.target.closest('button[data-edit-catalog]');
+  if (edit) { openTeacherEditor(edit.dataset.editCatalog,undefined,'all'); return; }
+  const add=event.target.closest('button[data-add-subject]');
+  if (add) openCatalogTeacher(add.dataset.addSubject);
+});
+function commitYearRecord(record,options = {}) {
+  requireEditing();
+  validateYearModel(record);
+  const next=JSON.parse(JSON.stringify(yearRegistry));
+  next.years[activeYear]=options.recordUndo===false?record:prepareUndoRecord(record);
+  saveRegistry(next);
+  const selected=$('turma-sel').value;
+  applyYearModel(record); renderYearControls();
+  if (TURMAS.includes(selected)) $('turma-sel').value=selected;
+  renderTabs(); render();
+}
+function saveClassSelection(labels) {
+  requireEditing();
+  if (!labels.length) throw new Error('Selecione pelo menos um ano escolar e a última turma.');
+  if (labels.some(label=>!parseFundamentalClass(label))) throw new Error('Use os anos do 6º ao 9º e turmas de A até F.');
+  const record=captureYear();
+  const desired = new Set(labels);
+  const previousActive=new Set(TURMAS);
+  const added=[],hidden=[],reactivated=[];
+  for (const label of labels) {
+    const parsed=parseFundamentalClass(label);
+    let key=Object.keys(record.classLabels).find(t=>{
+      const old=parseFundamentalClass(record.classLabels[t]);return old && old.grade===parsed.grade && old.letter===parsed.letter;
+    });
+    if (!key) {
+      key=parsed.grade+parsed.letter;
+      while(Object.hasOwn(record.classLabels,key)) key+='X';
+      record.classLabels[key]=label;
+      for (const day of DIAS) record.raw[day][key]=Array(5).fill('—');
+      added.push(label);
+    } else if (!previousActive.has(key)) reactivated.push(label);
+  }
+  record.archivedClasses=Object.keys(record.classLabels).filter(t=>{
+    const parsed=parseFundamentalClass(record.classLabels[t]);
+    const keep=parsed?desired.has(parsed.grade+'º Ano '+parsed.letter):true;
+    if (!keep && previousActive.has(t)) hidden.push(record.classLabels[t]);
+    return !keep;
+  });
+  if (!added.length && !hidden.length && !reactivated.length) return false;
+  record.edits.history.unshift({kind:'classes',at:new Date().toISOString(),added,hidden,reactivated});
+  commitYearRecord(record); return true;
+}
+$('class-settings-form').addEventListener('submit',event=>{
+  event.preventDefault();
+  if(!requestEditing()) return;
+  try {
+    const changed=saveClassSelection(selectedClassLabels('manage'));
+    renderClassPicker('manage-grades','manage',TURMAS.map(t=>CLASS_LABELS[t]));
+    $('settings-error').textContent='';
+    $('settings-notice').textContent=changed?'Turmas salvas. As turmas retiradas da lista mantêm seus dados e reaparecem se forem selecionadas novamente.':'As turmas já estão atualizadas.';
+  } catch(error) { $('settings-error').textContent=error.message; }
+});
+let catalogTeacherKey=null;
+function openCatalogTeacher(key=null) {
+  if(!requestEditing()) return;
+  catalogTeacherKey=key;
+  $('catalog-teacher-form').reset();
+  $('catalog-teacher-error').textContent='';
+  $('catalog-teacher-title').textContent=key?'Adicionar matérias':'Adicionar professor(a)';
+  $('catalog-teacher-name').value=key?(BASE_NAMES[key] || key):'';
+  $('catalog-teacher-name').disabled=Boolean(key);
+  $('catalog-teacher-subjects').value='';
+  $('catalog-teacher-color').value=key?PROF_COLORS[key].l:DRAFT_COLORS[TEACHERS.length%DRAFT_COLORS.length];
+  $('catalog-teacher-color').disabled=Boolean(key);
+  $('catalog-teacher-help').textContent=key?'Matérias atuais: '+SUBJECTS[key].join(', ')+'. Digite as novas matérias separadas por vírgulas.':'Preencha os dados. Depois, use “Montar horários” para colocar este professor nas aulas.';
+  $('catalog-teacher-dialog').showModal();
+}
+$('add-catalog-teacher').addEventListener('click',()=>openCatalogTeacher());
+$('cancel-catalog-teacher').addEventListener('click',()=>$('catalog-teacher-dialog').close());
+function addCatalogTeacher(name,subjects,color,key=null) {
+  requireEditing();
+  name=name.trim(); subjects=subjects.map(s=>s.trim()).filter(Boolean);
+  if (!name || name.length>80 || !subjects.length || subjects.some(s=>s.length>80) || !/^#[0-9a-f]{6}$/i.test(color)) throw new Error('Preencha o nome, as matérias e a cor. Use até 80 caracteres por nome ou matéria.');
+  if (key && !TEACHERS.includes(key)) throw new Error('Professor não encontrado.');
+  if (!key && TEACHERS.some(t=>(BASE_NAMES[t] || t).toLocaleLowerCase('pt-BR')===name.toLocaleLowerCase('pt-BR'))) throw new Error('Já existe um professor com esse nome. Use “+ Matérias” para adicionar matérias a ele.');
+  const record=captureYear();
+  const existing=key?[...record.subjects[key]]:[];
+  const seen=new Set(existing.map(s=>s.toLocaleLowerCase('pt-BR')));
+  const fresh=subjects.filter(s=>{const normalized=s.toLocaleLowerCase('pt-BR');if(seen.has(normalized))return false;seen.add(normalized);return true;});
+  if (!fresh.length) throw new Error('Essas matérias já estão cadastradas para este professor.');
+  const addingTeacher=!key;
+  if (!key) { let n=1;while(Object.hasOwn(record.subjects,'p'+n)) n++; key='p'+n; record.names[key]=name; record.colors[key]={l:color}; record.subjects[key]=[]; }
+  record.subjects[key].push(...fresh);
+  for(const profile of [record.edits.global[key],...Object.values(record.edits.classes).map(p=>p[key])].filter(Boolean)) {
+    const effective=existing.map(s=>profile.assignments?.[s] || {name:profile.name,color:profile.color});
+    const common=effective.length && effective.every(p=>p.name===effective[0].name && p.color.toLowerCase()===effective[0].color.toLowerCase()) ? effective[0] : null;
+    for(const s of fresh) {
+      profile.subjects[s]=s;
+      if(common) { profile.assignments ||= {}; profile.assignments[s]={name:common.name,color:common.color}; }
+    }
+  }
+  record.edits.history.unshift({kind:'catalog',at:new Date().toISOString(),name,subjects:fresh,action:addingTeacher?'teacher-added':'subjects-added'});
+  commitYearRecord(record);
+  return key;
+}
+$('catalog-teacher-form').addEventListener('submit',event=>{
+  event.preventDefault();
+  if(!requestEditing()) return;
+  try {
+    addCatalogTeacher($('catalog-teacher-name').value,$('catalog-teacher-subjects').value.split(','),$('catalog-teacher-color').value,catalogTeacherKey);
+    $('catalog-teacher-dialog').close(); renderTeacherCatalog();
+    $('settings-notice').textContent=catalogTeacherKey?'Novas matérias cadastradas.':'Professor(a) adicionado(a). Já pode ser selecionado(a) em “Montar horários”.';
+  } catch(error) { $('catalog-teacher-error').textContent=error.message; }
+});
+function renderAdministrativeHistory(entry,formatter) {
+  const date=`<h3><time datetime="${escapeHtml(entry.at)}">${escapeHtml(formatter.format(new Date(entry.at)))}</time></h3>`;
+  if(entry.kind==='undo')return `<article class="history-entry">${date}<p><b>Alteração desfeita:</b> ${escapeHtml(entry.label)}</p></article>`;
+  if(entry.kind==='teacher-removed')return `<article class="history-entry">${date}<p><b>Professor(a) excluído(a):</b> ${escapeHtml(entry.name)}</p><p class="help">${entry.subjects.map(escapeHtml).join(', ')} · ${entry.lessons} aula(s) deixada(s) sem professor.</p></article>`;
+  if(entry.kind==='import')return `<article class="history-entry">${date}<p><b>Professores importados de ${escapeHtml(entry.sourceYear)}</b></p>${entry.imported.map(p=>`<div class="history-change"><p><span class="history-swatch" style="background:${p.color}"></span>${escapeHtml(p.name)} · ${p.action==='teacher-added'?'Professor(a) adicionado(a)':'Matérias acrescentadas'}</p><p class="help">${p.subjects.map(escapeHtml).join(', ')}</p></div>`).join('')}</article>`;
+  if(entry.kind==='catalog')return `<article class="history-entry">${date}<p>${entry.action==='teacher-added'?'Professor(a) adicionado(a)':'Matérias adicionadas'}: <b>${escapeHtml(entry.name)}</b></p><p class="help">${entry.subjects.map(escapeHtml).join(', ')}</p></article>`;
+  const lines=[['Turmas adicionadas',entry.added],['Turmas retiradas da lista',entry.hidden],['Turmas reativadas',entry.reactivated]].filter(([,values])=>values.length).map(([label,values])=>`<p class="help"><b>${label}:</b> ${values.map(escapeHtml).join(', ')}</p>`).join('');
+  return `<article class="history-entry">${date}${lines}</article>`;
+}
+
+let teacherImportContext='new';
+let teacherImportCandidates=[];
+const normalizeTeacherText=value=>value.trim().toLocaleLowerCase('pt-BR');
+function teacherCandidatesFromYear(year) {
+  const record=yearRegistry.years[year];
+  if(!record) throw new Error('Ano de origem não cadastrado.');
+  const groups=new Map();
+  const activeClasses=Object.keys(record.classLabels).filter(t=>!(record.archivedClasses || []).includes(t));
+  function add(profile,originalSubject) {
+    const identity=profile.assignments?.[originalSubject] || profile;
+    const name=identity.name,subject=profile.subjects[originalSubject];
+    const normalized=normalizeTeacherText(name);
+    if(!groups.has(normalized)) groups.set(normalized,{name,color:identity.color,subjects:[]});
+    const group=groups.get(normalized);
+    if(!group.subjects.some(s=>normalizeTeacherText(s)===normalizeTeacherText(subject))) group.subjects.push(subject);
+  }
+  for(const key of Object.keys(record.subjects).filter(k=>!(record.removedTeachers || []).includes(k))) {
+    const base=record.edits.global[key] || {name:record.names[key] || key,color:record.colors[key].l,subjects:Object.fromEntries(record.subjects[key].map(s=>[s,s]))};
+    for(const subject of record.subjects[key]) {
+      let assigned=false;
+      for(const turma of activeClasses) {
+        if(!DIAS.some(day=>record.raw[day][turma].includes(key+' '+subject))) continue;
+        assigned=true;
+        add(record.edits.classes[turma]?.[key] || base,subject);
+      }
+      if(!assigned) add(base,subject);
+    }
+  }
+  return [...groups.values()].sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'));
+}
+function openTeacherImport(context) {
+  if(!requestEditing()) return;
+  teacherImportContext=context;
+  const target=context==='new'?$('new-year-number').value.trim():activeYear;
+  $('import-teachers-error').textContent='';
+  $('import-teachers-context').textContent='Importar professores para '+target+'. Você pode desmarcar quem não continuará. Os horários serão mantidos como estão.';
+  if(!/^\d{4}$/.test(target)) {
+    $('import-teachers-error').textContent='Informe primeiro o ano letivo de destino.';
+    teacherImportCandidates=[];
+    $('import-source-year').innerHTML='';
+    $('import-teachers-list').innerHTML='';
+    $('confirm-teacher-import').disabled=true;
+    $('import-teachers-dialog').showModal(); return;
+  }
+  const sources=Object.keys(yearRegistry.years).filter(y=>Number(y)<Number(target)).sort((a,b)=>Number(b)-Number(a));
+  $('import-source-year').innerHTML=sources.map(year=>`<option value="${year}">${year}${Number(year)===Number(target)-1?' · Ano anterior':''}</option>`).join('');
+  $('import-source-year').value=sources[0] || '';
+  refreshTeacherImport();
+  $('import-teachers-dialog').showModal();
+}
+function refreshTeacherImport() {
+  const source=$('import-source-year').value;
+  if(!source || !yearRegistry.years[source]) {
+    teacherImportCandidates=[];
+    $('import-teachers-list').innerHTML='<p class="help">Não há um ano anterior cadastrado para importar professores.</p>';
+    $('confirm-teacher-import').disabled=true;
+    updateTeacherImportCount(); return;
+  }
+  teacherImportCandidates=teacherCandidatesFromYear(source);
+  $('import-teachers-list').innerHTML=teacherImportCandidates.map((p,i)=>`<label class="import-teacher-choice" for="import-teacher-${i}"><input type="checkbox" id="import-teacher-${i}" checked /><span><b><span class="history-swatch" style="background:${p.color}"></span>${escapeHtml(p.name)}</b><span class="help import-subjects">${p.subjects.map(escapeHtml).join(', ')}</span></span></label>`).join('');
+  if(!teacherImportCandidates.length) $('import-teachers-list').innerHTML='<p class="help">Nenhum professor cadastrado neste ano.</p>';
+  $('confirm-teacher-import').disabled=!teacherImportCandidates.length;
+  $('import-teachers-error').textContent='';
+  updateTeacherImportCount();
+}
+function selectedImportTeachers() {
+  return teacherImportCandidates.filter((p,i)=>$('import-teacher-'+i).checked);
+}
+function updateTeacherImportCount() {
+  const count=selectedImportTeachers().length;
+  $('import-teachers-count').textContent=count+' professor(es) selecionado(s).';
+}
+function mergeTeacherDrafts(teachers) {
+  requireEditing();
+  let added=0,merged=0;
+  // The initial empty row must not block registering imported teachers.
+  for(const id of [...teacherDraftIds]) if(!$('teacher-name-'+id).value.trim() && !$('teacher-subjects-'+id).value.trim()) {
+    $('teacher-row-'+id).remove();
+    teacherDraftIds=teacherDraftIds.filter(i=>i!==id);
+  }
+  for(const teacher of teachers) {
+    const id=teacherDraftIds.find(i=>normalizeTeacherText($('teacher-name-'+i).value)===normalizeTeacherText(teacher.name));
+    if(id!==undefined) {
+      const subjects=$('teacher-subjects-'+id).value.split(',').map(s=>s.trim()).filter(Boolean);
+      const fresh=teacher.subjects.filter(s=>!subjects.some(v=>normalizeTeacherText(s)===normalizeTeacherText(v)));
+      if(fresh.length) { $('teacher-subjects-'+id).value=[...subjects,...fresh].join(', '); merged++; }
+    } else { addTeacherDraft(teacher); added++; }
+  }
+  return {added,merged};
+}
+function mergeTeachersIntoYear(teachers,sourceYear) {
+  requireEditing();
+  if(!yearRegistry.years[sourceYear] || Number(sourceYear)>=Number(activeYear)) throw new Error('Selecione um ano anterior válido.');
+  const record=captureYear();
+  const imported=[];
+  let added=0,merged=0;
+  for(const teacher of teachers) {
+    if(!teacher || !teacher.name?.trim() || teacher.name.length>80 || !Array.isArray(teacher.subjects) || !teacher.subjects.length || teacher.subjects.some(s=>typeof s!=='string' || !s.trim() || s.length>80) || !/^#[0-9a-f]{6}$/i.test(teacher.color)) throw new Error('Professor de origem inválido.');
+    const normalized=normalizeTeacherText(teacher.name);
+    let key=Object.keys(record.subjects).filter(k=>!(record.removedTeachers || []).includes(k)).find(k=>{
+      const base=record.edits.global[k] || {name:record.names[k] || k};
+      const names=record.subjects[k].map(s=>base.assignments?.[s]?.name || base.name);
+      return names.length && names.every(n=>normalizeTeacherText(n)===normalized);
+    });
+    const isNew=!key;
+    if(!key) {
+      let n=1; while(Object.hasOwn(record.subjects,'p'+n)) n++;
+      key='p'+n; record.names[key]=teacher.name.trim(); record.colors[key]={l:teacher.color}; record.subjects[key]=[];
+    }
+    const existing=[...record.subjects[key]];
+    const base=record.edits.global[key];
+    const known=new Set(existing.flatMap(s=>[normalizeTeacherText(s),normalizeTeacherText(base?.subjects[s] || s)]));
+    const fresh=teacher.subjects.map(s=>s.trim()).filter(s=>{const normalized=normalizeTeacherText(s);if(known.has(normalized))return false;known.add(normalized);return true;});
+    if(!fresh.length) continue;
+    record.subjects[key].push(...fresh);
+    for(const profile of [record.edits.global[key],...Object.values(record.edits.classes).map(p=>p[key])].filter(Boolean)) {
+      const identities=existing.map(s=>profile.assignments?.[s] || {name:profile.name,color:profile.color});
+      const common=identities.length && identities.every(p=>p.name===identities[0].name && p.color.toLowerCase()===identities[0].color.toLowerCase())?identities[0]:null;
+      for(const s of fresh) {
+        profile.subjects[s]=s;
+        if(common) { profile.assignments ||= {}; profile.assignments[s]={name:common.name,color:common.color}; }
+      }
+    }
+    imported.push({name:teacher.name.trim(),subjects:fresh,color:isNew?teacher.color:record.colors[key].l,action:isNew?'teacher-added':'subjects-added'});
+    if(isNew) added++; else merged++;
+  }
+  if(imported.length) {
+    record.edits.history.unshift({kind:'import',at:new Date().toISOString(),sourceYear,imported});
+    commitYearRecord(record);
+  }
+  return {added,merged};
+}
+$('import-draft-teachers').addEventListener('click',()=>openTeacherImport('new'));
+$('import-existing-teachers').addEventListener('click',()=>openTeacherImport('existing'));
+$('import-source-year').addEventListener('change',refreshTeacherImport);
+$('import-teachers-list').addEventListener('change',updateTeacherImportCount);
+$('select-import-all').addEventListener('click',()=>{teacherImportCandidates.forEach((p,i)=>$('import-teacher-'+i).checked=true);updateTeacherImportCount();});
+$('select-import-none').addEventListener('click',()=>{teacherImportCandidates.forEach((p,i)=>$('import-teacher-'+i).checked=false);updateTeacherImportCount();});
+$('cancel-teacher-import').addEventListener('click',()=>$('import-teachers-dialog').close());
+$('import-teachers-form').addEventListener('submit',event=>{
+  event.preventDefault();
+  if(!requestEditing()) return;
+  const teachers=selectedImportTeachers();
+  if(!teachers.length) { $('import-teachers-error').textContent='Marque pelo menos um professor para importar.'; return; }
+  try {
+    const result=teacherImportContext==='new'?mergeTeacherDrafts(teachers):mergeTeachersIntoYear(teachers,$('import-source-year').value);
+    const message=result.added || result.merged?`${result.added} professor(es) adicionado(s); ${result.merged} cadastro(s) com matérias acrescentadas.`:'Os professores e as matérias selecionados já estão cadastrados.';
+    $('import-teachers-dialog').close();
+    if(teacherImportContext==='new') $('draft-import-notice').textContent=message+' Confira os dados e registre o ano.';
+    else {renderTeacherCatalog();$('settings-notice').textContent=message;}
+  } catch(error) { $('import-teachers-error').textContent=error.message; }
+});
+
+let pendingDeleteTeacher=null;
+function teacherRemovalDetails(key) {
+  if(!TEACHERS.includes(key)) throw new Error('Professor não encontrado.');
+  const base=edits.global[key] || defaultProfile(key);
+  const names=[...new Set(SUBJECTS[key].map(s=>base.assignments?.[s]?.name || base.name))].join(' / ');
+  let lessons=0;
+  for(const day of DIAS) for(const turma of Object.keys(CLASS_LABELS)) lessons+=RAW[day][turma].filter(s=>getProfName(s)===key).length;
+  return {name:names,subjects:SUBJECTS[key].map(s=>base.subjects[s]),lessons};
+}
+function openDeleteTeacher(key) {
+  if(!requestEditing()) return;
+  const details=teacherRemovalDetails(key);
+  pendingDeleteTeacher=key;
+  $('delete-teacher-summary').textContent=details.name+' · Ano '+activeYear+'. Este cadastro tem '+details.lessons+' aula(s) na semana, contando também turmas guardadas.';
+  $('delete-teacher-error').textContent='';
+  $('delete-teacher-dialog').showModal();
+}
+function deleteTeacher(key) {
+  requireEditing();
+  const details=teacherRemovalDetails(key);
+  const record=captureYear();
+  record.removedTeachers ||= [];
+  record.removedTeachers.push(key);
+  for(const day of DIAS) for(const turma of Object.keys(record.classLabels)) record.raw[day][turma]=record.raw[day][turma].map(s=>getProfName(s)===key?'—':s);
+  record.edits.history.unshift({kind:'teacher-removed',at:new Date().toISOString(),...details});
+  commitYearRecord(record);
+  return details;
+}
+$('cancel-delete-teacher').addEventListener('click',()=>{pendingDeleteTeacher=null;$('delete-teacher-dialog').close();});
+$('confirm-delete-teacher').addEventListener('click',()=>{
+  try {
+    const details=deleteTeacher(pendingDeleteTeacher);
+    pendingDeleteTeacher=null;
+    $('delete-teacher-dialog').close(); renderTeacherCatalog();
+    $('settings-notice').textContent=details.name+' excluído(a). '+details.lessons+' aula(s) ficaram disponíveis para preencher novamente.';
+  } catch(error) { $('delete-teacher-error').textContent=error.message; }
+});
+
+let timetableView='day';
+function undoLabel(entry) {
+  if(!entry) return 'Alteração no horário';
+  if(entry.kind==='teacher-removed') return 'Exclusão de '+entry.name;
+  if(entry.kind==='catalog') return (entry.action==='teacher-added'?'Cadastro de ':'Novas matérias de ')+entry.name;
+  if(entry.kind==='classes') return 'Alteração das turmas';
+  if(entry.kind==='import') return 'Importação de professores de '+entry.sourceYear;
+  return entry.changes?.some(c=>c.slot)?'Alteração na grade de aulas':'Alteração de professor, matéria ou cor';
+}
+function prepareUndoRecord(record) {
+  const before=captureYear();
+  delete before.undoStack;
+  record.undoStack=[...UNDO_STACK,{at:new Date().toISOString(),label:undoLabel(record.edits.history[0]).slice(0,240),before}].slice(-20);
+  return record;
+}
+function refreshUndoControl() {
+  const last=UNDO_STACK.at(-1);
+  $('undo-last').disabled=!last;
+  $('undo-info').textContent=last?'Desfazer: '+last.label+'.':'Nenhuma alteração disponível para desfazer. As próximas alterações salvas aparecerão aqui.';
+}
+function undoLastChange() {
+  requireEditing();
+  const last=UNDO_STACK.at(-1);
+  if(!last) return false;
+  const restored=JSON.parse(JSON.stringify(last.before));
+  restored.undoStack=JSON.parse(JSON.stringify(UNDO_STACK.slice(0,-1)));
+  restored.edits.history=[{kind:'undo',at:new Date().toISOString(),label:last.label},...JSON.parse(JSON.stringify(edits.history))];
+  validateYearModel(restored);
+  const registry=JSON.parse(JSON.stringify(yearRegistry));
+  registry.years[activeYear]=restored;
+  const selected=$('turma-sel').value;
+  saveRegistry(registry);
+  applyYearModel(restored); renderYearControls();
+  if(TURMAS.includes(selected)) $('turma-sel').value=selected;
+  renderTabs();render();renderHistory();
+  if($('year-settings').open) renderTeacherCatalog();
+  $('notice').textContent='Alteração desfeita: '+last.label+'.';
+  return true;
+}
+$('undo-last').addEventListener('click',()=>{
+  if(!requestEditing()) return;
+  try { undoLastChange(); $('undo-error').textContent=''; }
+  catch(error) { $('undo-error').textContent=error.message; }
+});
+function selectWeek() {
+  timetableView='week';
+  renderTabs();render();
+}
+function weeklyLessonBadge(original,turma,day,index,isActive) {
+  if(!original || original==='—') return `<button type="button" class="teacher-link weekly-empty" data-empty-slot="${index}" data-day="${escapeHtml(day)}">+ Definir aula</button>`;
+  const key=getProfName(original),subject=original.slice(key.length).trim();
+  const colors=getBadgeColors(original);
+  return `<button type="button" class="subject-badge teacher-link" data-teacher="${escapeHtml(key)}" data-subjects="${escapeHtml(JSON.stringify([subject]))}" style="background:${colors.bg};color:${colors.color}" title="Editar professor e matéria">${escapeHtml(displaySubject(original,turma))}</button>${isActive?'<span class="now-badge">agora</span>':''}`;
+}
+function renderWeek() {
+  const turma=$('turma-sel').value;
+  const times=HORARIOS[currentMode],count=currentMode==='930'?3:5;
+  const today=Number(activeYear)===new Date().getFullYear()?getTodayDia():null;
+  const active=today?getCurrentAula(currentMode):-1;
+  renderLegend();
+  let html=`<table class="weekly-table"><caption>Semana inteira · ${escapeHtml(CLASS_LABELS[turma])} · ${activeYear}</caption><thead><tr><th scope="col">Aula / Horário</th>${DIAS.map(day=>`<th scope="col">${escapeHtml(day)}${day===today?' ●':''}</th>`).join('')}</tr></thead><tbody>`;
+  for(let i=0;i<count;i++) {
+    html+=`<tr><th scope="row"><span class="aula-num">${i+1}ª aula</span><span class="weekly-time">${times[i]} – ${times[i+1]}</span></th>${DIAS.map(day=>{
+      const isActive=day===today && i===active;
+      return `<td${isActive?' class="weekly-active"':''}>${weeklyLessonBadge(RAW[day][turma][i],turma,day,i,isActive)}</td>`;
+    }).join('')}</tr>`;
+  }
+  html+='</tbody></table>';
+  $('table-container').innerHTML=html;
+  lastAula=active;lastDay=currentDay;
+}
+
+function recordProfile(record,key,turma) {
+  return record.edits.classes[turma]?.[key] || record.edits.global[key] || {name:record.names[key] || key,color:record.colors[key].l,subjects:Object.fromEntries(record.subjects[key].map(s=>[s,s]))};
+}
+function recordValueSnapshot(record,value,turma) {
+  if(value==='—')return {name:'Sem professor',subject:'Sem aula',color:record.colors.default.l};
+  const key=value.split(' ')[0],subject=value.slice(key.length).trim();
+  const profile=recordProfile(record,key,turma),identity=profile.assignments?.[subject] || profile;
+  return {name:identity.name,subject:profile.subjects[subject],color:identity.color};
+}
+function setRecordOldValues(record,key,subject,turma,values,global=false) {
+  if(!record.subjects[key]?.includes(subject))throw new Error('Este cadastro não existe mais neste ano. Cadastre o professor novamente antes de recuperar a alteração.');
+  record.removedTeachers=(record.removedTeachers || []).filter(k=>k!==key);
+  const base=global?(record.edits.global[key] || {name:record.names[key] || key,color:record.colors[key].l,subjects:Object.fromEntries(record.subjects[key].map(s=>[s,s]))}):recordProfile(record,key,turma);
+  const profile=JSON.parse(JSON.stringify(base));
+  profile.subjects[subject]=values.subject;
+  profile.assignments ||= {};
+  profile.assignments[subject]={name:values.name,color:values.color};
+  if(global) record.edits.global[key]=profile;
+  else { record.edits.classes[turma] ||= {}; record.edits.classes[turma][key]=profile; }
+}
+function findHistorySlotValue(record,change,turma,side='before') {
+  const target=change[side];
+  if(typeof change[side+'Value']==='string') return change[side+'Value'];
+  if(target.name==='Sem professor' && target.subject==='Sem aula') return '—';
+  if(side==='after' && record.subjects[change.teacher]?.includes(change.originalSubject)) return change.teacher+' '+change.originalSubject;
+  const candidates=[];
+  for(const key of Object.keys(record.subjects)) for(const subject of record.subjects[key]) {
+    const profile=recordProfile(record,key,turma),identity=profile.assignments?.[subject] || profile;
+    const currentMatch=identity.name===target.name && profile.subjects[subject]===target.subject;
+    const originalMatch=(record.names[key] || key)===target.name && subject===target.subject;
+    const historicalMatch=edits.history.some(entry=>entry.changes?.some(c=>!c.slot && c.teacher===key && c.originalSubject===subject && [c.before,c.after].some(v=>v.name===target.name && v.subject===target.subject)));
+    if(currentMatch || originalMatch || historicalMatch) candidates.push(key+' '+subject);
+  }
+  if(candidates.length!==1) throw new Error('Não foi possível identificar com certeza o professor desta aula antiga. Para esse registro, ajuste a aula em “Montar horários”.');
+  return candidates[0];
+}
+function restoreHistoryState(entryIndex,changeIndex,side='before') {
+  requireEditing();
+  const entry=edits.history[entryIndex],change=entry?.changes?.[changeIndex];
+  if(!change)throw new Error('Alteração não encontrada no histórico.');
+  if(!['before','after'].includes(side))throw new Error('Escolha Antes ou Depois.');
+  const target=change[side];
+  const record=captureYear(),changes=[];
+  if(change.slot) {
+    for(const turma of change.turmas) {
+      if(!record.classLabels[turma])throw new Error('Esta turma não existe mais neste ano.');
+      const value=findHistorySlotValue(record,change,turma,side);
+      const previous=record.raw[change.slot.day][turma][change.slot.index];
+      const before=recordValueSnapshot(record,previous,turma);
+      if(value===previous && JSON.stringify(before)===JSON.stringify(target))continue;
+      if(value!=='—') {
+        const key=value.split(' ')[0],subject=value.slice(key.length).trim();
+        setRecordOldValues(record,key,subject,turma,target);
+      }
+      record.raw[change.slot.day][turma][change.slot.index]=value;
+      const reference=value==='—'?previous:value;
+      const key=reference.split(' ')[0];
+      changes.push({teacher:key,originalSubject:reference.slice(key.length).trim(),turmas:[turma],before,after:target,slot:{...change.slot},beforeValue:previous,afterValue:value});
+    }
+  } else {
+    const key=change.teacher,subject=change.originalSubject;
+    if(!record.subjects[key]?.includes(subject))throw new Error('O cadastro desta matéria não existe mais neste ano.');
+    const targets=change.catalog?[null]:change.turmas;
+    for(const turma of targets) {
+      if(turma!==null && !record.classLabels[turma])throw new Error('Esta turma não existe mais neste ano.');
+      const profile=turma===null?(record.edits.global[key] || defaultProfile(key)):recordProfile(record,key,turma);
+      const identity=profile.assignments?.[subject] || profile;
+      const before={name:identity.name,subject:profile.subjects[subject],color:identity.color};
+      if(JSON.stringify(before)===JSON.stringify(target) && !(record.removedTeachers || []).includes(key))continue;
+      setRecordOldValues(record,key,subject,turma,target,turma===null);
+      changes.push({teacher:key,originalSubject:subject,turmas:turma===null?[]:[turma],before,after:target,...(turma===null?{catalog:true}:{})});
+    }
+  }
+  if(!changes.length) { $('undo-info').textContent='Os valores escolhidos já estão em uso.'; return false; }
+  record.edits=validateData(record.edits);
+  commitYearRecord(record,{recordUndo:false});
+  renderHistory();
+  $('undo-info').textContent='Valores de “'+(side==='before'?'Antes':'Depois')+'” aplicados. O histórico foi mantido.';
+  $('notice').textContent='Valores de “'+(side==='before'?'Antes':'Depois')+'” aplicados.';
+  return true;
+}
+function restoreHistoryBefore(entryIndex,changeIndex) { return restoreHistoryState(entryIndex,changeIndex,'before'); }
+function historySideIsActive(entryIndex,changeIndex,side) {
+  const change=edits.history[entryIndex]?.changes?.[changeIndex];
+  if(!change)return false;
+  const target=change[side];
+  const same=p=>p.name===target.name && p.subject===target.subject && p.color.toLowerCase()===target.color.toLowerCase();
+  try {
+    if(change.slot)return change.turmas.every(t=>{
+      const value=RAW[change.slot.day]?.[t]?.[change.slot.index];
+      if(value===undefined)return false;
+      const record={raw:RAW,colors:PROF_COLORS,names:BASE_NAMES,subjects:SUBJECTS,edits,classLabels:CLASS_LABELS};
+      return value===findHistorySlotValue(record,change,t,side) && same(recordValueSnapshot(record,value,t));
+    });
+    if(!SUBJECTS[change.teacher]?.includes(change.originalSubject) || REMOVED_TEACHERS.includes(change.teacher))return false;
+    const targets=change.catalog?[null]:change.turmas;
+    return targets.every(t=>{
+      const p=t===null?(edits.global[change.teacher] || defaultProfile(change.teacher)):profileFor(change.teacher,t);
+      const identity=p.assignments?.[change.originalSubject] || p;
+      return same({name:identity.name,subject:p.subjects[change.originalSubject],color:identity.color});
+    });
+  } catch(error) { return false; }
+}
+$('history-list').addEventListener('click',event=>{
+  const button=event.target.closest('button[data-restore-entry]');
+  if(!button || !requestEditing())return;
+  try { restoreHistoryState(Number(button.dataset.restoreEntry),Number(button.dataset.restoreChange),button.dataset.restoreSide || 'before'); $('undo-error').textContent=''; }
+  catch(error) { $('undo-error').textContent=error.message; }
+});
+
+let currentMode = "normal";
+let lastAula = -2;
+let lastDay = "";
+let isDark = false;
+
+function toggleDark() {
+  isDark = !isDark;
+  document.body.classList.toggle("dark", isDark);
+  document.getElementById("dark-btn").textContent = isDark ? "☀️ Claro" : "🌙 Escuro";
+  lastAula = -2;
+  render();
+}
+
+function toMin(str) {
+  if (!str || str === "—") return null;
+  const [h, m] = str.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function getCurrentAula(mode) {
+  const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const times = HORARIOS[mode];
+  const maxAulas = mode === '930' ? 3 : 5;
+  for (let i = 0; i < maxAulas; i++) {
+    const start = toMin(times[i]);
+    const end = toMin(times[i + 1]);
+    if (start === null || end === null) continue;
+    if (nowMin >= start && nowMin < end) return i;
+  }
+  return -1;
+}
+
+function getTodayDia() {
+  const dow = new Date().getDay();
+  const map = {1:"2ª Feira",2:"3ª Feira",3:"4ª Feira",4:"5ª Feira",5:"6ª Feira"};
+  return map[dow] || null;
+}
+
+function setMode(mode, btn) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  lastAula = -2;
+  render();
+}
+
+function renderTabs() {
+  const todayDia = getTodayDia();
+  const container = document.getElementById('day-tabs');
+  container.innerHTML = DIAS.map(d => {
+    const isToday = Number(activeYear) === new Date().getFullYear() && d === todayDia;
+    return `<button class="tab${timetableView==='day' && d===currentDay?' active':''}" ${isToday?'style="font-weight:600"':''} onclick="selectDay('${d}',this)">${d}${isToday?' ●':''}</button>`;
+  }).join('')+`<button type="button" class="tab${timetableView==='week'?' active':''}" onclick="selectWeek()">Semana inteira</button>`;
+}
+
+function selectDay(day, btn) {
+  timetableView='day';
+  currentDay = day;
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  lastAula = -2;
+  renderTabs();render();
+}
+
+const todayInit = getTodayDia();
+let currentDay = todayInit || "2ª Feira";
+
+function renderLegend() {
+  const turma = $('turma-sel').value;
+  const groups = new Map();
+  for (const day of DIAS) for (const original of RAW[day][turma]) {
+    if (!original || original === '—') continue;
+    const key = getProfName(original);
+    const subject = original.slice(key.length).trim();
+    const p = lessonProfile(key,turma,subject);
+    const id = JSON.stringify([key,p.name,p.color]);
+    if (!groups.has(id)) groups.set(id,{key,profile:p,subjects:new Set()});
+    groups.get(id).subjects.add(subject);
+  }
+  $('legend').innerHTML = [...groups.values()].map(({key,profile:p,subjects}) => `<button type="button" class="legend-item teacher-link" data-teacher="${escapeHtml(key)}" data-subjects="${escapeHtml(JSON.stringify([...subjects]))}" title="Editar ${escapeHtml(p.name)}"><span class="legend-dot" style="background:${p.color};border:1.5px solid ${contrastColor(p.color)}"></span>${escapeHtml(p.name)}</button>`).join('');
+}
+
+function render() {
+  $('schedule-container').classList.toggle('week-view',timetableView==='week');
+  if(timetableView==='week') { renderWeek(); return; }
+  const turma = document.getElementById('turma-sel').value;
+  const aulas = RAW[currentDay][turma];
+  const times = HORARIOS[currentMode];
+  const maxAulas = currentMode === '930' ? 3 : 5;
+  const todayDia = getTodayDia();
+  const activeAula = (Number(activeYear) === new Date().getFullYear() && currentDay === todayDia) ? getCurrentAula(currentMode) : -1;
+
+  renderLegend();
+
+  let html = `<table>
+    <thead><tr>
+      <th style="width:40px">Aula</th>
+      <th style="width:110px">Horário</th>
+      <th>Professor(a) / Matéria</th>
+    </tr></thead><tbody>`;
+
+  for (let i = 0; i < maxAulas; i++) {
+    const subj = aulas[i] || '—';
+    const time = times[i];
+    const endTime = times[i+1] || '';
+    const c = getBadgeColors(subj);
+    const isActive = i === activeAula;
+    const timeStr = (endTime && endTime !== '—') ? `${time} – ${endTime}` : time;
+
+    const badge = subj !== '—'
+      ? `<button type="button" class="subject-badge teacher-link" data-teacher="${escapeHtml(getProfName(subj))}" data-subjects="${escapeHtml(JSON.stringify([subj.slice(getProfName(subj).length).trim()]))}" title="Clique para editar professor e matéria" style="background:${c.bg};color:${c.color}">${escapeHtml(displaySubject(subj, turma))}</button>${isActive ? '<span class="now-badge">agora</span>' : ''}`
+      : `<button type="button" class="teacher-link" data-empty-slot="${i}" style="color:var(--text3);font-size:12px;background:transparent;padding:4px 0" title="Preencher este horário">+ Definir aula</button>`;
+
+    html += `<tr class="${isActive ? 'active-row' : ''}">
+      <td class="aula-num">${i+1}ª</td>
+      <td class="time-col">${timeStr}</td>
+      <td>${badge}</td>
+    </tr>`;
+  }
+
+  html += `</tbody></table>`;
+  document.getElementById('table-container').innerHTML = html;
+  lastAula = activeAula;
+  lastDay = currentDay;
+}
+
+function tick() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2,'0');
+  const m = String(now.getMinutes()).padStart(2,'0');
+  const s = String(now.getSeconds()).padStart(2,'0');
+  document.getElementById('clock').textContent = `${h}:${m}:${s}`;
+  const todayDia = getTodayDia();
+  const activeAula = (Number(activeYear) === new Date().getFullYear() && (timetableView==='week' || currentDay === todayDia)) ? getCurrentAula(currentMode) : -1;
+  if (activeAula !== lastAula || currentDay !== lastDay) {
+    render();
+    renderTabs();
+  }
+}
+
+document.getElementById('turma-sel').addEventListener('change', () => { lastAula = -2; render(); });
+
+initializeYears();
+renderTabs();
+render();
+tick();
+setInterval(tick, 1000);
+</script>
+</body>
+</html>
