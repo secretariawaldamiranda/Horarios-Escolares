@@ -155,6 +155,11 @@
   .value-line { display:block; font-size:13px; line-height:1.6; overflow-wrap:anywhere; }
   .restore-hint { display:block; color:var(--tab-active-text); font-size:11px; margin-top:7px; }
   .history-state-active { border-color:#287ac4; background:var(--tab-active-bg); }
+  dialog .lesson-subject-choice { display:flex; align-items:center; gap:10px; border:1px solid var(--border); border-radius:8px; padding:12px; margin:8px 0; cursor:pointer; }
+  dialog .lesson-subject-choice input[type=radio] { width:18px; height:18px; padding:0; flex:0 0 18px; accent-color:#0c447c; }
+  .lesson-subject-choice:has(input:checked) { background:var(--tab-active-bg); border-color:#287ac4; }
+  .history-entry-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:6px; }
+  .history-entry-heading h3 { margin:0; }
 </style>
 </head>
 <body>
@@ -199,7 +204,7 @@
 <dialog id="editor" aria-labelledby="editor-title">
   <form id="editor-form">
     <h2 id="editor-title">Editar professor(a)</h2>
-    <p class="help">Marque as matérias que deseja alterar. O nome e a cor serão aplicados somente às matérias marcadas, nos mesmos dias e horários. As demais ficam como estão.</p>
+    <p class="help">Marque as matérias que deseja alterar. O nome será aplicado às matérias marcadas, nos mesmos dias e horários. Você pode aplicar a cor em todas as matérias do professor ou somente nas matérias marcadas abaixo.</p>
     <label for="edit-scope">Onde aplicar</label>
     <select id="edit-scope"><option value="all">Todas as turmas</option><option value="class">Somente a turma selecionada</option></select>
     <p class="help" id="scope-help"></p>
@@ -207,8 +212,10 @@
     <select id="edit-teacher"></select>
     <label for="edit-name">Nome do professor(a) substituto ou atual</label>
     <input id="edit-name" required maxlength="80" autocomplete="off" />
-    <label for="edit-color">Cor nos horários</label>
+    <label for="edit-color">Cor</label>
     <div class="color-line"><input type="color" id="edit-color" /><span id="color-preview" class="subject-badge">Prévia</span></div>
+    <label for="edit-color-scope">Onde aplicar esta cor?</label>
+    <select id="edit-color-scope"><option value="all">Todas as matérias deste professor</option><option value="subject">Somente as matérias marcadas abaixo</option></select>
     <div id="subjects"></div>
     <p class="help" id="impact"></p>
     <p id="editor-error" role="alert"></p>
@@ -221,6 +228,7 @@
   <div class="admin-bar"><button type="button" id="undo-last">↶ Desfazer última alteração</button></div>
   <p class="help" id="undo-info"></p>
   <p class="form-error" id="undo-error" role="alert"></p>
+  <p class="help" id="history-feedback" role="status" aria-live="polite"></p>
   <div id="history-list"></div>
   <div class="dialog-actions"><button type="button" id="close-history">Fechar</button></div>
 </dialog>
@@ -317,6 +325,18 @@
   <p class="help">As aulas desse cadastro ficarão sem professor. Você poderá preenchê-las em “Montar horários”. A exclusão vale somente para o ano selecionado e ficará registrada no histórico.</p>
   <p class="form-error" id="delete-teacher-error" role="alert"></p>
   <div class="dialog-actions"><button type="button" id="cancel-delete-teacher" autofocus>Cancelar</button><button type="button" class="danger" id="confirm-delete-teacher">Excluir professor(a)</button></div>
+</dialog>
+<dialog id="single-lesson-dialog" aria-labelledby="single-lesson-title">
+  <form id="single-lesson-form">
+    <h2 id="single-lesson-title">Matéria desta aula</h2>
+    <p class="help" id="single-lesson-context"></p>
+    <p id="single-lesson-professor" style="font-weight:600"></p>
+    <p class="help">Escolha somente uma matéria. Ao marcar outra, a anterior será desmarcada. A mudança vale apenas para este horário desta turma.</p>
+    <fieldset id="single-lesson-subjects" style="border:0;padding:0"></fieldset>
+    <p class="form-error" id="single-lesson-error" role="alert"></p>
+    <button type="button" class="small-button" id="single-lesson-edit-profile">Editar cadastro do professor (nome e cor)</button>
+    <div class="dialog-actions"><button type="button" id="cancel-single-lesson">Cancelar</button><button type="submit" class="primary">Salvar esta aula</button></div>
+  </form>
 </dialog>
 <script>
 const DIAS = ["2ª Feira","3ª Feira","4ª Feira","5ª Feira","6ª Feira"];
@@ -415,12 +435,13 @@ let CLASS_LABELS = Object.fromEntries(TURMAS.map(t => [t,t.replace(/^(\d)([AB])$
 let ARCHIVED_CLASSES = [];
 let REMOVED_TEACHERS = [];
 let UNDO_STACK = [];
+let TEACHER_COLOR_MAP = {};
 let activeYear = '2026';
 let yearRegistry = null;
 const YEARS_STORAGE_KEY = 'horario-escolar-anos-v1';
 const $ = id => document.getElementById(id);
 let editingUnlocked=false;
-const EDITING_DIALOGS=['editor','year-manager','new-year-dialog','year-settings','schedule-dialog','catalog-teacher-dialog','import-teachers-dialog','delete-teacher-dialog'];
+const EDITING_DIALOGS=['editor','year-manager','new-year-dialog','year-settings','schedule-dialog','catalog-teacher-dialog','import-teachers-dialog','delete-teacher-dialog','single-lesson-dialog'];
 function signalEditingLocked() {
   for(const id of EDITING_DIALOGS) if($(id).open) $(id).close();
   if($('history-dialog').open) $('history-dialog').close();
@@ -458,8 +479,42 @@ function contrastColor(hex) {
   const rgb = hex.slice(1).match(/../g).map(v => parseInt(v,16)/255).map(v => v <= .04045 ? v/12.92 : ((v+.055)/1.055)**2.4);
   return rgb[0]*.2126 + rgb[1]*.7152 + rgb[2]*.0722 > .179 ? '#1a1a1a' : '#ffffff';
 }
+function fullSubjectName(value) {
+  const original=String(value);
+  const key=original.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR').replace(/[.\s]+/g,'').trim();
+  const names={hist:'História',historia:'História',geog:'Geografia',geografia:'Geografia',mat:'Matemática',matematica:'Matemática',port:'Português',portugues:'Português',edfis:'Educação Física',edfisica:'Educação Física',educacaofisica:'Educação Física',ciencias:'Ciências',ingles:'Inglês',religiao:'Religião',arte:'Arte'};
+  return names[key] || original;
+}
+
+function professorColorKey(name) { return 'prof:'+name.trim().toLocaleLowerCase('pt-BR'); }
+function professorSubjectColorKey(name,subject) { return professorColorKey(name)+'|subject:'+fullSubjectName(subject).trim().toLocaleLowerCase('pt-BR'); }
+function professorColor(name,fallback,map=TEACHER_COLOR_MAP,subject) {
+  return (subject && map[professorSubjectColorKey(name,subject)]) || map[professorColorKey(name)] || fallback;
+}
+function selectedColorMap(name,color,subjects,scope) {
+  const map={...TEACHER_COLOR_MAP};
+  if(scope==='subject') for(const subject of subjects)map[professorSubjectColorKey(name,subject)]=color;
+  else {
+    const prefix=professorColorKey(name)+'|subject:';
+    for(const key of Object.keys(map))if(key.startsWith(prefix))delete map[key];
+    map[professorColorKey(name)]=color;
+  }
+  return map;
+}
+function yearTeacherColors(record) {
+  const map={...(record.teacherColors || {})};
+  const seeded=Object.keys(map).length>0;
+  function add(name,color) { const key=professorColorKey(name); if(!seeded || !Object.hasOwn(map,key))map[key]=color; }
+  for(const key of Object.keys(record.subjects))add(record.names[key] || key,record.colors[key].l);
+  for(const profile of [...Object.values(record.edits.global),...Object.values(record.edits.classes).flatMap(p=>Object.values(p))]) {
+    add(profile.name,profile.color);
+    for(const identity of Object.values(profile.assignments || {}))add(identity.name,identity.color);
+  }
+  return map;
+}
+
 function defaultProfile(key) {
-  return {name:key === 'default' ? 'Sem professor' : (BASE_NAMES[key] || key), color:PROF_COLORS[key].l, subjects:Object.fromEntries((SUBJECTS[key] || []).map(s => [s,s]))};
+  return {name:key === 'default' ? 'Sem professor' : (BASE_NAMES[key] || key), color:PROF_COLORS[key].l, subjects:Object.fromEntries((SUBJECTS[key] || []).map(s => [s,fullSubjectName(s)]))};
 }
 function validAssignments(assignments,key) {
   return assignments === undefined || (assignments && typeof assignments === 'object' && !Array.isArray(assignments) && Object.keys(assignments).every(s => SUBJECTS[key].includes(s) && assignments[s] && typeof assignments[s].name === 'string' && assignments[s].name.trim().length > 0 && assignments[s].name.length <= 80 && /^#[0-9a-f]{6}$/i.test(assignments[s].color)));
@@ -485,7 +540,7 @@ function validateData(data) {
   return clean;
 }
 function cleanProfile(profile,key) {
-  return {name:profile.name.trim(),color:profile.color,subjects:Object.fromEntries(SUBJECTS[key].map(s => [s,profile.subjects[s].trim()])),assignments:Object.fromEntries(Object.entries(profile.assignments || {}).map(([s,p]) => [s,{name:p.name.trim(),color:p.color}]))};
+  return {name:profile.name.trim(),color:profile.color,subjects:Object.fromEntries(SUBJECTS[key].map(s => [s,fullSubjectName(profile.subjects[s].trim())])),assignments:Object.fromEntries(Object.entries(profile.assignments || {}).map(([s,p]) => [s,{name:p.name.trim(),color:p.color}]))};
 }
 let edits = {version:1,global:{},classes:{},history:[]};
 try {
@@ -497,22 +552,26 @@ function profileFor(key,turma) {
 }
 function lessonProfile(key,turma,subject) {
   const profile = profileFor(key,turma);
-  return {...profile,...profile.assignments?.[subject]};
+  const lesson={...profile,...profile.assignments?.[subject]};
+  return {...lesson,color:professorColor(lesson.name,lesson.color,TEACHER_COLOR_MAP,subject)};
 }
 function displaySubject(original,turma) {
   const key = getProfName(original);
   if (key === 'default') return original;
   const subject = original.slice(key.length).trim();
   const profile = lessonProfile(key,turma,subject);
-  return profile.name + ' · ' + (profile.subjects[subject] || subject);
+  return profile.name + ' · ' + fullSubjectName(profile.subjects[subject] || subject);
 }
-function persist(next,rawNext = RAW) {
+function persist(next,rawNext = RAW,colorMap=TEACHER_COLOR_MAP) {
   requireEditing();
   const registry = JSON.parse(JSON.stringify(yearRegistry));
-  registry.years[activeYear] = prepareUndoRecord(captureYear(next,rawNext));
+  const record=captureYear(next,rawNext);
+  record.teacherColors={...colorMap};
+  registry.years[activeYear] = prepareUndoRecord(record);
   saveRegistry(registry);
   edits = next;
   RAW = rawNext;
+  TEACHER_COLOR_MAP={...colorMap};
   UNDO_STACK = registry.years[activeYear].undoStack;
 }
 
@@ -554,7 +613,7 @@ function validateHistory(history) {
       if (!change || typeof change.teacher!=='string' || !change.teacher || change.teacher.length>80 || typeof change.originalSubject!=='string' || !change.originalSubject || change.originalSubject.length>80 || !Array.isArray(change.turmas) || (!change.turmas.length && !change.catalog) || !change.turmas.every(t => typeof t==='string' && /^[A-Za-z0-9]+$/.test(t) && t.length<=80) || !validSnapshot(change.before) || !validSnapshot(change.after)) throw new Error('Alteração no histórico inválida.');
       const snapshot = p => ({name:p.name,subject:p.subject,color:p.color});
       if (change.slot && (!DIAS.includes(change.slot.day) || !Number.isInteger(change.slot.index) || change.slot.index < 0 || change.slot.index > 4)) throw new Error('Aula inválida no histórico.');
-      return {teacher:change.teacher,originalSubject:change.originalSubject,turmas:[...new Set(change.turmas)],before:snapshot(change.before),after:snapshot(change.after),...(change.catalog ? {catalog:true} : {}),...(change.slot ? {slot:{day:change.slot.day,index:change.slot.index},...(typeof change.beforeValue==='string' && change.beforeValue.length<=180?{beforeValue:change.beforeValue}:{}),...(typeof change.afterValue==='string' && change.afterValue.length<=180?{afterValue:change.afterValue}:{})} : {})};
+      return {teacher:change.teacher,originalSubject:change.originalSubject,turmas:[...new Set(change.turmas)],before:snapshot(change.before),after:snapshot(change.after),...(['all','subject'].includes(change.colorScope)?{colorScope:change.colorScope}:{}),...(change.catalog ? {catalog:true} : {}),...(change.slot ? {slot:{day:change.slot.day,index:change.slot.index},...(typeof change.beforeValue==='string' && change.beforeValue.length<=180?{beforeValue:change.beforeValue}:{}),...(typeof change.afterValue==='string' && change.afterValue.length<=180?{afterValue:change.afterValue}:{})} : {})};
     })};
   });
 }
@@ -584,7 +643,23 @@ function createHistoryEntry(key,selected,all,name,color) {
 function historyValue(p,label,entryIndex,changeIndex) {
   const side=label==='Antes'?'before':'after';
   const active=historySideIsActive(entryIndex,changeIndex,side);
-  return `<button type="button" class="history-value restore-before${active?' history-state-active':''}" data-restore-entry="${entryIndex}" data-restore-change="${changeIndex}" data-restore-side="${side}" aria-pressed="${active}" title="Usar os valores de ${label.toLowerCase()}"><strong>${label}${active?' ✓':''}</strong><span class="value-line">${escapeHtml(p.name)}</span><span class="value-line">${escapeHtml(p.subject)}</span><span class="value-line"><span class="history-swatch" style="background:${p.color}"></span>${escapeHtml(p.color.toUpperCase())}</span><span class="restore-hint">${active?'Em uso':'Clique para usar'}</span></button>`;
+  return `<button type="button" class="history-value restore-before${active?' history-state-active':''}" data-restore-entry="${entryIndex}" data-restore-change="${changeIndex}" data-restore-side="${side}" aria-pressed="${active}" title="Usar os valores de ${label.toLowerCase()}"><strong>${label}${active?' ✓':''}</strong><span class="value-line">${escapeHtml(p.name)}</span><span class="value-line">${escapeHtml(fullSubjectName(p.subject))}</span><span class="value-line"><span class="history-swatch" style="background:${p.color}"></span>${escapeHtml(p.color.toUpperCase())}</span><span class="restore-hint">${active?'Em uso':'Clique para usar'}</span></button>`;
+}
+
+function historyEntryHeading(entry,formatter,index) {
+  return `<div class="history-entry-heading"><h3><time datetime="${escapeHtml(entry.at)}">${escapeHtml(formatter.format(new Date(entry.at)))}</time></h3><button type="button" class="trash-button" data-delete-history="${index}" title="Excluir somente este registro do histórico" aria-label="Excluir este registro do histórico"><span aria-hidden="true">🗑️</span></button></div>`;
+}
+function deleteHistoryEntry(index) {
+  requireEditing();
+  if(!Number.isInteger(index) || index<0 || index>=edits.history.length)throw new Error('Registro não encontrado no histórico.');
+  const nextEdits=JSON.parse(JSON.stringify(edits));
+  nextEdits.history.splice(index,1);
+  const registry=JSON.parse(JSON.stringify(yearRegistry));
+  registry.years[activeYear]=captureYear(nextEdits);
+  saveRegistry(registry);
+  edits=nextEdits;
+  renderHistory();
+  $('history-feedback').textContent='Registro excluído. Professores, turmas e horários foram mantidos.';
 }
 
 function renderHistory() {
@@ -593,13 +668,19 @@ function renderHistory() {
   const entries = edits.history || [];
   if (!entries.length) { $('history-list').innerHTML = '<p class="help">Nenhuma alteração registrada ainda. As próximas alterações salvas aparecerão aqui.</p>'; return; }
   const formatter = new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'medium',timeZone:'America/Sao_Paulo'});
-  $('history-list').innerHTML = entries.map((entry,entryIndex) => entry.kind ? renderAdministrativeHistory(entry,formatter) : `<article class="history-entry"><h3><time datetime="${escapeHtml(entry.at)}">${escapeHtml(formatter.format(new Date(entry.at)))}</time></h3><p class="help">${entry.scope === 'all' ? 'Aplicação em todas as turmas' : 'Aplicação na turma selecionada'} · Horário de Brasília</p>${entry.changes.map((change,changeIndex) => `<div class="history-change"><p><b>Turma(s):</b> ${change.catalog ? 'Cadastro do ano (sem aulas atribuídas)' : change.turmas.map(t => escapeHtml(CLASS_LABELS[t] || t.replace(/^([6-9])([A-F])$/,'$1º Ano $2'))).join(', ')}</p>${change.slot ? '<p>'+escapeHtml(change.slot.day)+' · '+(change.slot.index+1)+'ª aula</p>' : ''}${historyValuePair(change,entryIndex,changeIndex)}</div>`).join('')}</article>`).join('');
+  $('history-list').innerHTML = entries.map((entry,entryIndex) => entry.kind ? renderAdministrativeHistory(entry,formatter,entryIndex) : `<article class="history-entry">${historyEntryHeading(entry,formatter,entryIndex)}<p class="help">${entry.scope === 'all' ? 'Aplicação em todas as turmas' : 'Aplicação na turma selecionada'} · Horário de Brasília</p>${entry.changes.map((change,changeIndex) => `<div class="history-change"><p><b>Turma(s):</b> ${change.catalog ? 'Cadastro do ano (sem aulas atribuídas)' : change.turmas.map(t => escapeHtml(CLASS_LABELS[t] || t.replace(/^([6-9])([A-F])$/,'$1º Ano $2'))).join(', ')}</p>${change.slot ? '<p>'+escapeHtml(change.slot.day)+' · '+(change.slot.index+1)+'ª aula</p>' : ''}${historyValuePair(change,entryIndex,changeIndex)}</div>`).join('')}</article>`).join('');
 }
 function historyValuePair(change,entryIndex,changeIndex) {
   return `<div class="history-values">${historyValue(change.before,'Antes',entryIndex,changeIndex)}${historyValue(change.after,'Depois',entryIndex,changeIndex)}</div>`;
 }
-$('open-history').addEventListener('click', () => { renderHistory(); $('history-dialog').showModal(); });
+$('open-history').addEventListener('click', () => { $('history-feedback').textContent=''; renderHistory(); $('history-dialog').showModal(); });
 $('close-history').addEventListener('click', () => $('history-dialog').close());
+$('history-dialog').addEventListener('click',event=>{
+  const dialog=$('history-dialog');
+  if(event.target!==dialog) return;
+  const bounds=dialog.getBoundingClientRect();
+  if(event.clientX<bounds.left || event.clientX>bounds.right || event.clientY<bounds.top || event.clientY>bounds.bottom) dialog.close();
+});
 
 function populateTeachers(preferred,selected) {
   const turma = $('turma-sel').value;
@@ -623,11 +704,12 @@ function fillEditor(selected) {
   const p = lessonProfile(key,turma,first);
   $('edit-name').value = p.name;
   $('edit-color').value = p.color;
-  $('subjects').innerHTML = '<p class="help">Marque as matérias que receberão o nome e a cor acima. Edite o título da matéria se desejar.</p>'+subjects.map(s => {
+  $('edit-color-scope').value=Object.hasOwn(TEACHER_COLOR_MAP,professorSubjectColorKey(p.name,first))?'subject':'all';
+  $('subjects').innerHTML = '<p class="help">Marque as matérias que receberão o nome acima. Escolha acima se a cor vale para todas as matérias ou somente para as marcadas. Edite o título da matéria se desejar.</p>'+subjects.map(s => {
     const i = SUBJECTS[key].indexOf(s);
     const p = lessonProfile(key,turma,s);
     const included = checked.includes(s);
-    return `<div class="subject-choice"><label for="choose-${i}"><input type="checkbox" id="choose-${i}" data-subject-index="${i}" ${included ? 'checked' : ''} />${escapeHtml(p.subjects[s])} · ${escapeHtml(p.name)}</label><input id="subject-${i}" aria-label="Nome da matéria ${escapeHtml(p.subjects[s])}" required maxlength="80" value="${escapeHtml(p.subjects[s])}" ${included ? '' : 'disabled'} /></div>`;
+    return `<div class="subject-choice"><label for="choose-${i}"><input type="checkbox" id="choose-${i}" data-subject-index="${i}" ${included ? 'checked' : ''} />${escapeHtml(fullSubjectName(p.subjects[s]))} · ${escapeHtml(p.name)}</label><input id="subject-${i}" aria-label="Nome da matéria ${escapeHtml(fullSubjectName(p.subjects[s]))}" required maxlength="80" value="${escapeHtml(fullSubjectName(p.subjects[s]))}" ${included ? '' : 'disabled'} /></div>`;
   }).join('');
   $('scope-help').textContent = all ? 'Somente as matérias marcadas serão alteradas em todas as turmas, inclusive onde houve edição individual.' : 'Somente as matérias marcadas de '+$('turma-sel').selectedOptions[0].textContent+' serão alteradas.';
   $('editor-error').textContent = '';
@@ -659,6 +741,7 @@ function openTeacherEditor(key,selected,scope='class') {
 function handleTeacherClick(event) {
   const button = event.target.closest('button[data-teacher]');
   if (!button) { const empty=event.target.closest('button[data-empty-slot]'); if(empty) openScheduleEditor(empty.dataset.day); return; }
+  if(button.dataset.lessonIndex!==undefined) { openSingleLesson(button.dataset.lessonDay || currentDay,Number(button.dataset.lessonIndex)); return; }
   openTeacherEditor(button.dataset.teacher,JSON.parse(button.dataset.subjects));
 }
 $('table-container').addEventListener('click',handleTeacherClick);
@@ -705,22 +788,25 @@ $('editor-form').addEventListener('submit',event => {
     next.classes[turma] ||= {};
     next.classes[turma][key] = applyTo(profileFor(key,turma));
   }
+  const colorScope=$('edit-color-scope').value==='subject'?'subject':'all';
+  const nextColorMap=selectedColorMap(name,color,selected,colorScope);
   const historyEntry = createHistoryEntry(key,selected,all,name,color);
-  if (!historyEntry.changes.length) {
+  historyEntry.changes.forEach(change=>change.colorScope=colorScope);
+  if (!historyEntry.changes.length && JSON.stringify(nextColorMap)===JSON.stringify(TEACHER_COLOR_MAP)) {
     $('editor').close();
     $('notice').textContent = 'Nenhuma mudança: os valores já estavam salvos.';
     return;
   }
   next.history ||= [];
-  next.history.unshift(historyEntry);
-  try { persist(validateData(next)); }
+  if(historyEntry.changes.length)next.history.unshift(historyEntry);
+  try { persist(validateData(next),RAW,nextColorMap); }
   catch(error) { $('editor-error').textContent = error.message; return; }
   $('editor').close(); render();
   if ($('year-settings').open) renderTeacherCatalog();
   $('notice').textContent = 'Alterações salvas somente nas matérias marcadas '+(all ? 'de todas as turmas.' : 'de '+$('turma-sel').selectedOptions[0].textContent+'.');
 });
 function captureYear(editsData = edits,rawData = RAW) {
-  return JSON.parse(JSON.stringify({raw:rawData,colors:PROF_COLORS,names:BASE_NAMES,subjects:SUBJECTS,classLabels:CLASS_LABELS,archivedClasses:ARCHIVED_CLASSES,removedTeachers:REMOVED_TEACHERS,undoStack:UNDO_STACK,edits:editsData}));
+  return JSON.parse(JSON.stringify({raw:rawData,colors:PROF_COLORS,names:BASE_NAMES,subjects:SUBJECTS,classLabels:CLASS_LABELS,archivedClasses:ARCHIVED_CLASSES,removedTeachers:REMOVED_TEACHERS,undoStack:UNDO_STACK,teacherColors:TEACHER_COLOR_MAP,edits:editsData}));
 }
 function applyYearModel(record) {
   RAW = JSON.parse(JSON.stringify(record.raw));
@@ -734,6 +820,7 @@ function applyYearModel(record) {
   UNDO_STACK = JSON.parse(JSON.stringify(record.undoStack || []));
   TEACHERS = Object.keys(SUBJECTS).filter(k=>!REMOVED_TEACHERS.includes(k));
   edits = validateData(record.edits);
+  TEACHER_COLOR_MAP=yearTeacherColors({...record,edits});
 }
 function validateYearModel(record) {
   const text = v => typeof v === 'string' && v.trim().length > 0 && v.length <= 80;
@@ -749,6 +836,7 @@ function validateYearModel(record) {
     if(!item || typeof item.at!=='string' || !Number.isFinite(Date.parse(item.at)) || typeof item.label!=='string' || item.label.length>240 || !item.before || Object.hasOwn(item.before,'undoStack')) throw new Error('Alteração para desfazer inválida.');
     validateYearModel(item.before);
   }
+  if(record.teacherColors!==undefined && (!object(record.teacherColors) || Object.entries(record.teacherColors).some(([key,color])=>!key.startsWith('prof:') || key.length>190 || !/^#[0-9a-f]{6}$/i.test(color))))throw new Error('Cores dos professores inválidas.');
   if (!record.colors.default || !/^#[0-9a-f]{6}$/i.test(record.colors.default.l)) throw new Error('Cor padrão inválida.');
   for (const day of DIAS) {
     if (!object(record.raw[day])) throw new Error('Dia da semana inválido.');
@@ -870,7 +958,7 @@ function buildNewYear(year,labels,teachers) {
     const key='p'+(i+1);
     names[key]=teacher.name.trim(); colors[key]={l:teacher.color};
     const seen = new Set();
-    subjects[key]=teacher.subjects.map(s=>s.trim()).filter(s=>{const normalized=s.toLocaleLowerCase('pt-BR');if(seen.has(normalized)) return false;seen.add(normalized);return true;});
+    subjects[key]=teacher.subjects.map(s=>fullSubjectName(s.trim())).filter(s=>{const normalized=s.toLocaleLowerCase('pt-BR');if(seen.has(normalized)) return false;seen.add(normalized);return true;});
   });
   const raw=Object.fromEntries(DIAS.map(day=>[day,Object.fromEntries(Object.keys(classLabels).map(t=>[t,Array(5).fill('—')]))]));
   return validateYearModel({raw,colors,names,subjects,classLabels,edits:{version:1,global:{},classes:{},history:[]}});
@@ -915,18 +1003,20 @@ function openScheduleEditor(day) {
 }
 $('open-schedule').addEventListener('click',openScheduleEditor);
 $('cancel-schedule').addEventListener('click',()=>$('schedule-dialog').close());
-function saveSchedule(values) {
+function saveSchedule(values,context = {}) {
   requireEditing();
-  const turma=$('turma-sel').value;
+  const turma=context.turma || $('turma-sel').value;
+  const day=context.day || currentDay;
+  if(!TURMAS.includes(turma) || !DIAS.includes(day))throw new Error('Turma ou dia inválido.');
   if (!Array.isArray(values) || values.length!==5 || values.some(value=>value!=='—' && !TEACHERS.some(key=>SUBJECTS[key].some(s=>value===key+' '+s)))) throw new Error('Selecione um professor e uma matéria válidos em cada aula.');
   const changes=[];
   values.forEach((value,i)=>{
-    const previous=RAW[currentDay][turma][i]; if (value===previous) return;
+    const previous=RAW[day][turma][i]; if (value===previous) return;
     const ref=value==='—'?previous:value,key=getProfName(ref);
-    changes.push({teacher:key,originalSubject:ref.slice(key.length).trim(),turmas:[turma],before:scheduleSnapshot(previous,turma),after:scheduleSnapshot(value,turma),slot:{day:currentDay,index:i},beforeValue:previous,afterValue:value});
+    changes.push({teacher:key,originalSubject:ref.slice(key.length).trim(),turmas:[turma],before:scheduleSnapshot(previous,turma),after:scheduleSnapshot(value,turma),slot:{day,index:i},beforeValue:previous,afterValue:value});
   });
   if (!changes.length) return false;
-  const nextRaw=JSON.parse(JSON.stringify(RAW)); nextRaw[currentDay][turma]=[...values];
+  const nextRaw=JSON.parse(JSON.stringify(RAW)); nextRaw[day][turma]=[...values];
   const next=JSON.parse(JSON.stringify(edits)); next.history.unshift({at:new Date().toISOString(),scope:'class',changes});
   persist(validateData(next),nextRaw); render(); return true;
 }
@@ -994,7 +1084,7 @@ function renderTeacherCatalog() {
   $('teacher-catalog').innerHTML=TEACHERS.length?TEACHERS.map(key=>{
     const base=edits.global[key] || defaultProfile(key);
     const names=[...new Set(SUBJECTS[key].map(s=>base.assignments?.[s]?.name || base.name))].join(' / ');
-    return `<article class="catalog-teacher"><div><div class="catalog-name"><b>${escapeHtml(names)}</b><button type="button" class="trash-button" data-delete-teacher="${escapeHtml(key)}" title="Excluir ${escapeHtml(names)}" aria-label="Excluir ${escapeHtml(names)}"><span aria-hidden="true">🗑️</span></button></div><p class="help">${SUBJECTS[key].map(s=>escapeHtml(base.subjects[s])).join(', ')}</p></div><div class="catalog-actions"><button type="button" class="small-button" data-edit-catalog="${escapeHtml(key)}">Editar</button><button type="button" class="small-button" data-add-subject="${escapeHtml(key)}">+ Matérias</button></div></article>`;
+    return `<article class="catalog-teacher"><div><div class="catalog-name"><b>${escapeHtml(names)}</b><button type="button" class="trash-button" data-delete-teacher="${escapeHtml(key)}" title="Excluir ${escapeHtml(names)}" aria-label="Excluir ${escapeHtml(names)}"><span aria-hidden="true">🗑️</span></button></div><p class="help">${SUBJECTS[key].map(s=>escapeHtml(fullSubjectName(base.subjects[s]))).join(', ')}</p></div><div class="catalog-actions"><button type="button" class="small-button" data-edit-catalog="${escapeHtml(key)}">Editar</button><button type="button" class="small-button" data-add-subject="${escapeHtml(key)}">+ Matérias</button></div></article>`;
   }).join(''):'<p class="help">Nenhum professor cadastrado. Clique em “Adicionar professor(a)”.</p>';
 }
 $('open-year-settings').addEventListener('click',openYearSettings);
@@ -1009,6 +1099,7 @@ $('teacher-catalog').addEventListener('click',event=>{
 });
 function commitYearRecord(record,options = {}) {
   requireEditing();
+  record.teacherColors=yearTeacherColors(record);
   validateYearModel(record);
   const next=JSON.parse(JSON.stringify(yearRegistry));
   next.years[activeYear]=options.recordUndo===false?record:prepareUndoRecord(record);
@@ -1071,14 +1162,14 @@ function openCatalogTeacher(key=null) {
   $('catalog-teacher-subjects').value='';
   $('catalog-teacher-color').value=key?PROF_COLORS[key].l:DRAFT_COLORS[TEACHERS.length%DRAFT_COLORS.length];
   $('catalog-teacher-color').disabled=Boolean(key);
-  $('catalog-teacher-help').textContent=key?'Matérias atuais: '+SUBJECTS[key].join(', ')+'. Digite as novas matérias separadas por vírgulas.':'Preencha os dados. Depois, use “Montar horários” para colocar este professor nas aulas.';
+  $('catalog-teacher-help').textContent=key?'Matérias atuais: '+SUBJECTS[key].map(fullSubjectName).join(', ')+'. Digite as novas matérias separadas por vírgulas.':'Preencha os dados. Depois, use “Montar horários” para colocar este professor nas aulas.';
   $('catalog-teacher-dialog').showModal();
 }
 $('add-catalog-teacher').addEventListener('click',()=>openCatalogTeacher());
 $('cancel-catalog-teacher').addEventListener('click',()=>$('catalog-teacher-dialog').close());
 function addCatalogTeacher(name,subjects,color,key=null) {
   requireEditing();
-  name=name.trim(); subjects=subjects.map(s=>s.trim()).filter(Boolean);
+  name=name.trim(); subjects=subjects.map(s=>fullSubjectName(s.trim())).filter(Boolean);
   if (!name || name.length>80 || !subjects.length || subjects.some(s=>s.length>80) || !/^#[0-9a-f]{6}$/i.test(color)) throw new Error('Preencha o nome, as matérias e a cor. Use até 80 caracteres por nome ou matéria.');
   if (key && !TEACHERS.includes(key)) throw new Error('Professor não encontrado.');
   if (!key && TEACHERS.some(t=>(BASE_NAMES[t] || t).toLocaleLowerCase('pt-BR')===name.toLocaleLowerCase('pt-BR'))) throw new Error('Já existe um professor com esse nome. Use “+ Matérias” para adicionar matérias a ele.');
@@ -1111,12 +1202,12 @@ $('catalog-teacher-form').addEventListener('submit',event=>{
     $('settings-notice').textContent=catalogTeacherKey?'Novas matérias cadastradas.':'Professor(a) adicionado(a). Já pode ser selecionado(a) em “Montar horários”.';
   } catch(error) { $('catalog-teacher-error').textContent=error.message; }
 });
-function renderAdministrativeHistory(entry,formatter) {
-  const date=`<h3><time datetime="${escapeHtml(entry.at)}">${escapeHtml(formatter.format(new Date(entry.at)))}</time></h3>`;
+function renderAdministrativeHistory(entry,formatter,entryIndex) {
+  const date=historyEntryHeading(entry,formatter,entryIndex);
   if(entry.kind==='undo')return `<article class="history-entry">${date}<p><b>Alteração desfeita:</b> ${escapeHtml(entry.label)}</p></article>`;
-  if(entry.kind==='teacher-removed')return `<article class="history-entry">${date}<p><b>Professor(a) excluído(a):</b> ${escapeHtml(entry.name)}</p><p class="help">${entry.subjects.map(escapeHtml).join(', ')} · ${entry.lessons} aula(s) deixada(s) sem professor.</p></article>`;
-  if(entry.kind==='import')return `<article class="history-entry">${date}<p><b>Professores importados de ${escapeHtml(entry.sourceYear)}</b></p>${entry.imported.map(p=>`<div class="history-change"><p><span class="history-swatch" style="background:${p.color}"></span>${escapeHtml(p.name)} · ${p.action==='teacher-added'?'Professor(a) adicionado(a)':'Matérias acrescentadas'}</p><p class="help">${p.subjects.map(escapeHtml).join(', ')}</p></div>`).join('')}</article>`;
-  if(entry.kind==='catalog')return `<article class="history-entry">${date}<p>${entry.action==='teacher-added'?'Professor(a) adicionado(a)':'Matérias adicionadas'}: <b>${escapeHtml(entry.name)}</b></p><p class="help">${entry.subjects.map(escapeHtml).join(', ')}</p></article>`;
+  if(entry.kind==='teacher-removed')return `<article class="history-entry">${date}<p><b>Professor(a) excluído(a):</b> ${escapeHtml(entry.name)}</p><p class="help">${entry.subjects.map(s=>escapeHtml(fullSubjectName(s))).join(', ')} · ${entry.lessons} aula(s) deixada(s) sem professor.</p></article>`;
+  if(entry.kind==='import')return `<article class="history-entry">${date}<p><b>Professores importados de ${escapeHtml(entry.sourceYear)}</b></p>${entry.imported.map(p=>`<div class="history-change"><p><span class="history-swatch" style="background:${p.color}"></span>${escapeHtml(p.name)} · ${p.action==='teacher-added'?'Professor(a) adicionado(a)':'Matérias acrescentadas'}</p><p class="help">${p.subjects.map(s=>escapeHtml(fullSubjectName(s))).join(', ')}</p></div>`).join('')}</article>`;
+  if(entry.kind==='catalog')return `<article class="history-entry">${date}<p>${entry.action==='teacher-added'?'Professor(a) adicionado(a)':'Matérias adicionadas'}: <b>${escapeHtml(entry.name)}</b></p><p class="help">${entry.subjects.map(s=>escapeHtml(fullSubjectName(s))).join(', ')}</p></article>`;
   const lines=[['Turmas adicionadas',entry.added],['Turmas retiradas da lista',entry.hidden],['Turmas reativadas',entry.reactivated]].filter(([,values])=>values.length).map(([label,values])=>`<p class="help"><b>${label}:</b> ${values.map(escapeHtml).join(', ')}</p>`).join('');
   return `<article class="history-entry">${date}${lines}</article>`;
 }
@@ -1131,14 +1222,14 @@ function teacherCandidatesFromYear(year) {
   const activeClasses=Object.keys(record.classLabels).filter(t=>!(record.archivedClasses || []).includes(t));
   function add(profile,originalSubject) {
     const identity=profile.assignments?.[originalSubject] || profile;
-    const name=identity.name,subject=profile.subjects[originalSubject];
+    const name=identity.name,subject=fullSubjectName(profile.subjects[originalSubject]);
     const normalized=normalizeTeacherText(name);
-    if(!groups.has(normalized)) groups.set(normalized,{name,color:identity.color,subjects:[]});
+    if(!groups.has(normalized)) groups.set(normalized,{name,color:professorColor(name,identity.color,yearTeacherColors(record)),subjects:[]});
     const group=groups.get(normalized);
     if(!group.subjects.some(s=>normalizeTeacherText(s)===normalizeTeacherText(subject))) group.subjects.push(subject);
   }
   for(const key of Object.keys(record.subjects).filter(k=>!(record.removedTeachers || []).includes(k))) {
-    const base=record.edits.global[key] || {name:record.names[key] || key,color:record.colors[key].l,subjects:Object.fromEntries(record.subjects[key].map(s=>[s,s]))};
+    const base=record.edits.global[key] || {name:record.names[key] || key,color:record.colors[key].l,subjects:Object.fromEntries(record.subjects[key].map(s=>[s,fullSubjectName(s)]))};
     for(const subject of record.subjects[key]) {
       let assigned=false;
       for(const turma of activeClasses) {
@@ -1180,7 +1271,7 @@ function refreshTeacherImport() {
     updateTeacherImportCount(); return;
   }
   teacherImportCandidates=teacherCandidatesFromYear(source);
-  $('import-teachers-list').innerHTML=teacherImportCandidates.map((p,i)=>`<label class="import-teacher-choice" for="import-teacher-${i}"><input type="checkbox" id="import-teacher-${i}" checked /><span><b><span class="history-swatch" style="background:${p.color}"></span>${escapeHtml(p.name)}</b><span class="help import-subjects">${p.subjects.map(escapeHtml).join(', ')}</span></span></label>`).join('');
+  $('import-teachers-list').innerHTML=teacherImportCandidates.map((p,i)=>`<label class="import-teacher-choice" for="import-teacher-${i}"><input type="checkbox" id="import-teacher-${i}" checked /><span><b><span class="history-swatch" style="background:${p.color}"></span>${escapeHtml(p.name)}</b><span class="help import-subjects">${p.subjects.map(s=>escapeHtml(fullSubjectName(s))).join(', ')}</span></span></label>`).join('');
   if(!teacherImportCandidates.length) $('import-teachers-list').innerHTML='<p class="help">Nenhum professor cadastrado neste ano.</p>';
   $('confirm-teacher-import').disabled=!teacherImportCandidates.length;
   $('import-teachers-error').textContent='';
@@ -1233,7 +1324,7 @@ function mergeTeachersIntoYear(teachers,sourceYear) {
     const existing=[...record.subjects[key]];
     const base=record.edits.global[key];
     const known=new Set(existing.flatMap(s=>[normalizeTeacherText(s),normalizeTeacherText(base?.subjects[s] || s)]));
-    const fresh=teacher.subjects.map(s=>s.trim()).filter(s=>{const normalized=normalizeTeacherText(s);if(known.has(normalized))return false;known.add(normalized);return true;});
+    const fresh=teacher.subjects.map(s=>fullSubjectName(s.trim())).filter(s=>{const normalized=normalizeTeacherText(s);if(known.has(normalized))return false;known.add(normalized);return true;});
     if(!fresh.length) continue;
     record.subjects[key].push(...fresh);
     for(const profile of [record.edits.global[key],...Object.values(record.edits.classes).map(p=>p[key])].filter(Boolean)) {
@@ -1364,7 +1455,7 @@ function weeklyLessonBadge(original,turma,day,index,isActive) {
   if(!original || original==='—') return `<button type="button" class="teacher-link weekly-empty" data-empty-slot="${index}" data-day="${escapeHtml(day)}">+ Definir aula</button>`;
   const key=getProfName(original),subject=original.slice(key.length).trim();
   const colors=getBadgeColors(original);
-  return `<button type="button" class="subject-badge teacher-link" data-teacher="${escapeHtml(key)}" data-subjects="${escapeHtml(JSON.stringify([subject]))}" style="background:${colors.bg};color:${colors.color}" title="Editar professor e matéria">${escapeHtml(displaySubject(original,turma))}</button>${isActive?'<span class="now-badge">agora</span>':''}`;
+  return `<button type="button" class="subject-badge teacher-link" data-teacher="${escapeHtml(key)}" data-lesson-day="${escapeHtml(day)}" data-lesson-index="${index}" data-subjects="${escapeHtml(JSON.stringify([subject]))}" style="background:${colors.bg};color:${colors.color}" title="Trocar a matéria desta aula">${escapeHtml(displaySubject(original,turma))}</button>${isActive?'<span class="now-badge">agora</span>':''}`;
 }
 function renderWeek() {
   const turma=$('turma-sel').value;
@@ -1385,22 +1476,28 @@ function renderWeek() {
 }
 
 function recordProfile(record,key,turma) {
-  return record.edits.classes[turma]?.[key] || record.edits.global[key] || {name:record.names[key] || key,color:record.colors[key].l,subjects:Object.fromEntries(record.subjects[key].map(s=>[s,s]))};
+  return record.edits.classes[turma]?.[key] || record.edits.global[key] || {name:record.names[key] || key,color:record.colors[key].l,subjects:Object.fromEntries(record.subjects[key].map(s=>[s,fullSubjectName(s)]))};
 }
 function recordValueSnapshot(record,value,turma) {
   if(value==='—')return {name:'Sem professor',subject:'Sem aula',color:record.colors.default.l};
   const key=value.split(' ')[0],subject=value.slice(key.length).trim();
   const profile=recordProfile(record,key,turma),identity=profile.assignments?.[subject] || profile;
-  return {name:identity.name,subject:profile.subjects[subject],color:identity.color};
+  return {name:identity.name,subject:profile.subjects[subject],color:professorColor(identity.name,identity.color,record.teacherColors || {},subject)};
 }
-function setRecordOldValues(record,key,subject,turma,values,global=false) {
+function setRecordOldValues(record,key,subject,turma,values,global=false,colorScope='all') {
   if(!record.subjects[key]?.includes(subject))throw new Error('Este cadastro não existe mais neste ano. Cadastre o professor novamente antes de recuperar a alteração.');
   record.removedTeachers=(record.removedTeachers || []).filter(k=>k!==key);
-  const base=global?(record.edits.global[key] || {name:record.names[key] || key,color:record.colors[key].l,subjects:Object.fromEntries(record.subjects[key].map(s=>[s,s]))}):recordProfile(record,key,turma);
+  const base=global?(record.edits.global[key] || {name:record.names[key] || key,color:record.colors[key].l,subjects:Object.fromEntries(record.subjects[key].map(s=>[s,fullSubjectName(s)]))}):recordProfile(record,key,turma);
   const profile=JSON.parse(JSON.stringify(base));
   profile.subjects[subject]=values.subject;
   profile.assignments ||= {};
   profile.assignments[subject]={name:values.name,color:values.color};
+  record.teacherColors ||= yearTeacherColors(record);
+  if(colorScope==='subject')record.teacherColors[professorSubjectColorKey(values.name,subject)]=values.color;
+  else {
+    for(const key of Object.keys(record.teacherColors))if(key.startsWith(professorColorKey(values.name)+'|subject:'))delete record.teacherColors[key];
+    record.teacherColors[professorColorKey(values.name)]=values.color;
+  }
   if(global) record.edits.global[key]=profile;
   else { record.edits.classes[turma] ||= {}; record.edits.classes[turma][key]=profile; }
 }
@@ -1451,9 +1548,9 @@ function restoreHistoryState(entryIndex,changeIndex,side='before') {
       if(turma!==null && !record.classLabels[turma])throw new Error('Esta turma não existe mais neste ano.');
       const profile=turma===null?(record.edits.global[key] || defaultProfile(key)):recordProfile(record,key,turma);
       const identity=profile.assignments?.[subject] || profile;
-      const before={name:identity.name,subject:profile.subjects[subject],color:identity.color};
+      const before={name:identity.name,subject:profile.subjects[subject],color:professorColor(identity.name,identity.color,record.teacherColors || {},subject)};
       if(JSON.stringify(before)===JSON.stringify(target) && !(record.removedTeachers || []).includes(key))continue;
-      setRecordOldValues(record,key,subject,turma,target,turma===null);
+      setRecordOldValues(record,key,subject,turma,target,turma===null,change.colorScope || 'all');
       changes.push({teacher:key,originalSubject:subject,turmas:turma===null?[]:[turma],before,after:target,...(turma===null?{catalog:true}:{})});
     }
   }
@@ -1483,15 +1580,69 @@ function historySideIsActive(entryIndex,changeIndex,side) {
     return targets.every(t=>{
       const p=t===null?(edits.global[change.teacher] || defaultProfile(change.teacher)):profileFor(change.teacher,t);
       const identity=p.assignments?.[change.originalSubject] || p;
-      return same({name:identity.name,subject:p.subjects[change.originalSubject],color:identity.color});
+      return same({name:identity.name,subject:p.subjects[change.originalSubject],color:professorColor(identity.name,identity.color,TEACHER_COLOR_MAP,change.originalSubject)});
     });
   } catch(error) { return false; }
 }
 $('history-list').addEventListener('click',event=>{
+  const trash=event.target.closest('button[data-delete-history]');
+  if(trash) {
+    if(!requestEditing())return;
+    try { deleteHistoryEntry(Number(trash.dataset.deleteHistory)); $('undo-error').textContent=''; }
+    catch(error) { $('undo-error').textContent=error.message; }
+    return;
+  }
   const button=event.target.closest('button[data-restore-entry]');
   if(!button || !requestEditing())return;
   try { restoreHistoryState(Number(button.dataset.restoreEntry),Number(button.dataset.restoreChange),button.dataset.restoreSide || 'before'); $('undo-error').textContent=''; }
   catch(error) { $('undo-error').textContent=error.message; }
+});
+
+let singleLessonContext=null;
+function openSingleLesson(day,index) {
+  if(!requestEditing())return;
+  const turma=$('turma-sel').value;
+  if(!DIAS.includes(day) || !Number.isInteger(index) || index<0 || index>4)return;
+  const original=RAW[day][turma][index];
+  if(!original || original==='—') {openScheduleEditor(day);return;}
+  const key=getProfName(original),subject=original.slice(key.length).trim();
+  singleLessonContext={year:activeYear,turma,day,index,key,original};
+  $('single-lesson-context').textContent=CLASS_LABELS[turma]+' · '+day+' · '+(index+1)+'ª aula';
+  $('single-lesson-professor').textContent=lessonProfile(key,turma,subject).name;
+  $('single-lesson-subjects').innerHTML=SUBJECTS[key].map((s,i)=>{
+    const p=lessonProfile(key,turma,s);
+    return `<label class="lesson-subject-choice" for="lesson-subject-${i}"><input type="radio" id="lesson-subject-${i}" name="single-lesson-subject" value="${escapeHtml(s)}" ${s===subject?'checked':''} required /><span>${escapeHtml(fullSubjectName(p.subjects[s]))}</span></label>`;
+  }).join('');
+  $('single-lesson-error').textContent='';
+  $('single-lesson-dialog').showModal();
+}
+function saveSingleLessonSubject(subject) {
+  requireEditing();
+  const context=singleLessonContext;
+  if(!context || context.year!==activeYear || !TURMAS.includes(context.turma) || !TEACHERS.includes(context.key) || !SUBJECTS[context.key].includes(subject))throw new Error('Selecione uma matéria válida para esta aula.');
+  if(RAW[context.day][context.turma][context.index]!==context.original)throw new Error('Esta aula foi alterada. Feche a janela e abra a aula novamente.');
+  const values=[...RAW[context.day][context.turma]];
+  values[context.index]=context.key+' '+subject;
+  return saveSchedule(values,{day:context.day,turma:context.turma});
+}
+$('single-lesson-form').addEventListener('submit',event=>{
+  event.preventDefault();
+  if(!requestEditing())return;
+  try {
+    if(!singleLessonContext)throw new Error('Abra uma aula primeiro.');
+    const selected=SUBJECTS[singleLessonContext.key].filter((s,i)=>$('lesson-subject-'+i).checked);
+    if(selected.length!==1)throw new Error('Marque somente uma matéria para este horário.');
+    const changed=saveSingleLessonSubject(selected[0]);
+    $('single-lesson-dialog').close();
+    $('notice').textContent=changed?'Matéria alterada somente nesta aula de '+CLASS_LABELS[singleLessonContext.turma]+', '+singleLessonContext.day+', '+(singleLessonContext.index+1)+'ª aula.':'Esta matéria já estava selecionada.';
+  } catch(error) {$('single-lesson-error').textContent=error.message;}
+});
+$('cancel-single-lesson').addEventListener('click',()=>$('single-lesson-dialog').close());
+$('single-lesson-edit-profile').addEventListener('click',()=>{
+  if(!requestEditing() || !singleLessonContext)return;
+  const {key,original}=singleLessonContext;
+  $('single-lesson-dialog').close();
+  openTeacherEditor(key,[original.slice(key.length).trim()]);
 });
 
 let currentMode = "normal";
@@ -1605,7 +1756,7 @@ function render() {
     const timeStr = (endTime && endTime !== '—') ? `${time} – ${endTime}` : time;
 
     const badge = subj !== '—'
-      ? `<button type="button" class="subject-badge teacher-link" data-teacher="${escapeHtml(getProfName(subj))}" data-subjects="${escapeHtml(JSON.stringify([subj.slice(getProfName(subj).length).trim()]))}" title="Clique para editar professor e matéria" style="background:${c.bg};color:${c.color}">${escapeHtml(displaySubject(subj, turma))}</button>${isActive ? '<span class="now-badge">agora</span>' : ''}`
+      ? `<button type="button" class="subject-badge teacher-link" data-teacher="${escapeHtml(getProfName(subj))}" data-lesson-day="${escapeHtml(currentDay)}" data-lesson-index="${i}" data-subjects="${escapeHtml(JSON.stringify([subj.slice(getProfName(subj).length).trim()]))}" title="Trocar a matéria desta aula" style="background:${c.bg};color:${c.color}">${escapeHtml(displaySubject(subj, turma))}</button>${isActive ? '<span class="now-badge">agora</span>' : ''}`
       : `<button type="button" class="teacher-link" data-empty-slot="${i}" style="color:var(--text3);font-size:12px;background:transparent;padding:4px 0" title="Preencher este horário">+ Definir aula</button>`;
 
     html += `<tr class="${isActive ? 'active-row' : ''}">
